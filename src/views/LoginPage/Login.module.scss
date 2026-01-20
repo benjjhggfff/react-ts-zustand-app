@@ -1,0 +1,132 @@
+.LoginPage {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url(../../../public/login.jpg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+ 
+  
+}
+.InputWrap {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 30px;
+    align-items: center;
+}
+.LoginForm,.RegisterForm{
+    position: absolute;
+    top: 35;
+    left: 0;
+    right: 0;
+    margin: auto;
+    width: 500px;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  /* 非激活状态：透明+缩放+模糊 */
+     opacity: 0;
+    transform: scale(0.95);
+    filter: blur(4px);
+  /* 非激活表单不响应点击 */
+  pointer-events: none;
+  /* 盒模型修正，padding不撑宽 */
+  box-sizing: border-box;
+}
+.FormActive {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+  pointer-events: all;
+}
+.FormInactive {
+  opacity: 0;
+  transform: scale(0.95);
+  filter: blur(4px);
+  pointer-events: none;
+}
+.Welcome{
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #FFF;
+}
+.Username, .Password{
+  
+    width: 85%;
+    font-size: 16px;
+    height: 50px;
+    border-radius:25px ;
+    border: 1px solid #fdfdfd;
+    box-shadow: 0 0 10px #fdfdfd;
+    position: relative;
+    padding: 10px;
+    
+}
+
+.Username Input, .Password Input{
+    width: 100%;
+    height: 100%;
+    border: none !important;
+    outline: none;
+    background: transparent !important;
+    font-size: 16px;
+    color: #fff;
+    padding-left: 40px;
+    }
+
+
+.Options{
+    position: absolute;
+    display: flex;
+    justify-content: space-between;
+    width: 73%;
+    margin-top: 28%;
+    a{
+        color: #fff;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    .Remember {
+    width: 15px;
+    height: 15px;
+    margin-right: 10px;
+   
+}
+}
+.SignUp {
+    text-align: center;
+      color: #fff;
+     font-size: 14px;
+         a{
+        color: #fff;
+        font-size: 14px;
+    }
+}
+button{
+    padding: 10px;
+    margin-top: 30px;
+    width: 75%;
+    font-size: 16px;
+    border-radius: 1px;
+    border: none;
+    background-color: #97B5CB;
+    color: #fff;
+    cursor: pointer;
+}
+button:hover{
+    background-color:#6086AB;
+    transition: all 0.3s ease;
+}
+
+
+

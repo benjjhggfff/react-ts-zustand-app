@@ -1,0 +1,30 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  height: auto;
+}
+.logo {
+    width: 100%;
+    height: 60px;
+    text-align: center;
+    display: flex;
+     transition: all 0.3s ease;
+}
+.logoTextActive {
+  font-size: 27px;
+  font-weight: 300;
+  margin-left: 5px;
+  color: #6f70a8;
+  line-height: 60px;
+//   水平方向
+
+}
+.logoTextInactive {
+  display: none;
+
+
+}
+.menu {
+  height: 100vh;
+}

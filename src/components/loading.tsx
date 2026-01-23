@@ -1,7 +1,44 @@
-import React from "react";
+import React from 'react'
+import { Flex, Spin } from 'antd'
+import type { SpinProps } from 'antd'
+import { createStaticStyles } from 'antd-style'
 
-export default function LoginPage() {
-  return(
-    <div></div>
+const classNames = createStaticStyles(({ css }) => ({
+  root: css`
+    padding: 8px;
+  `,
+}))
+
+const stylesObject: SpinProps['styles'] = {
+  indicator: {
+    color: '#00d4ff',
+  },
+}
+
+const stylesFn: SpinProps['styles'] = ({ props }) => {
+  if (props.size === 'small') {
+    return {
+      indicator: {
+        color: '#722ed1',
+      },
+    } satisfies SpinProps['styles']
+  }
+  return {}
+}
+
+const Loading: React.FC = () => {
+  const sharedProps: SpinProps = {
+    spinning: true,
+    percent: 0,
+    classNames: { root: classNames.root },
+  }
+
+  return (
+    <Flex align="center" gap="middle">
+      <Spin {...sharedProps} styles={stylesObject} />
+      <Spin {...sharedProps} styles={stylesFn} size="small" />
+    </Flex>
   )
 }
+
+export default Loading

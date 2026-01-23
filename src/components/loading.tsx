@@ -11,19 +11,8 @@ const classNames = createStaticStyles(({ css }) => ({
 
 const stylesObject: SpinProps['styles'] = {
   indicator: {
-    color: '#00d4ff',
+    color: '#97B5CB',
   },
-}
-
-const stylesFn: SpinProps['styles'] = ({ props }) => {
-  if (props.size === 'small') {
-    return {
-      indicator: {
-        color: '#722ed1',
-      },
-    } satisfies SpinProps['styles']
-  }
-  return {}
 }
 
 const Loading: React.FC = () => {
@@ -34,9 +23,8 @@ const Loading: React.FC = () => {
   }
 
   return (
-    <Flex align="center" gap="middle">
-      <Spin {...sharedProps} styles={stylesObject} />
-      <Spin {...sharedProps} styles={stylesFn} size="small" />
+    <Flex align="center" gap="middle" justify="center" style={{ height: '100%' }}>
+      <Spin {...sharedProps} size="large" styles={stylesObject} />
     </Flex>
   )
 }

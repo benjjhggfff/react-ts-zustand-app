@@ -2,9 +2,24 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  background-color: #fff;
 }
 /* 定制主题颜色 */
 :root {
- --button-primary-bg: #97B5CB;
- --card-bg-color: #F6FAFC;
+  --button-primary-bg: #a6cbe5;
+  --card-bg-color: #f6fafc;
+  --bcg: #f5f7fa;
+  --layoutBcg: #f5f7fa;
+}
+
+html,
+body {
+  height: 100%;
+  font-size: 16px; // 作为rem的基准（可根据屏幕调整）
+}
+
+// 适配滚动条
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }

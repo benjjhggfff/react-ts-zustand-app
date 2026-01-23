@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 import type { MenuProps } from 'antd'
 import { useNavigate, Outlet } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
+import ContentBreadcrumb from './Breadcrumb'
+const PageLoading = lazy(() => import('../../components/loading'))
 import {
   BarChartOutlined,
   BankOutlined,
@@ -111,26 +114,22 @@ const SideMenuAnHeader: React.FC = () => {
         />
       </Sider>
       <Layout>
-        <Header
-          style={{
-            padding: 0,
-            background: 'var(--card-bg-color)',
-            position: 'sticky',
-            top: 0,
-            zIndex: 1,
-            width: '100%',
-          }}
-        ></Header>
+        <Header className={styles.header}></Header>
+
         <Content
+          className={styles.content}
           style={{
             margin: '8px 8px',
             padding: 4,
             minHeight: minHeight,
-            background: colorBgContainer,
+
             borderRadius: borderRadiusLG,
           }}
         >
-          <Outlet />
+          <ContentBreadcrumb />
+          <Suspense fallback={<PageLoading></PageLoading>}>
+            <Outlet />
+          </Suspense>
         </Content>
       </Layout>
     </Layout>

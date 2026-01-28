@@ -5,6 +5,7 @@ const ContentBreadcrumb: React.FC = () => (
   <Breadcrumb
     style={{
       padding: '0.8rem',
+      backgroundColor:  'var(--layoutBcg)',
     }}
     separator=">"
     items={[

@@ -26,11 +26,11 @@
   height: 100vh;
 }
 .content {
-  background-color: var(--bcg);
+  background-color: var(--layoutBcg);
 }
 .header {
   padding: 0;
-  background-color: var(--card-bg-color);
+  background:   var(--card-bg-color);
   position: sticky;
   top: 0;
   z-index: 1;

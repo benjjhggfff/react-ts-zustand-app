@@ -126,7 +126,7 @@ const SideMenuAnHeader: React.FC = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <ContentBreadcrumb />
+          <ContentBreadcrumb  />
           <Suspense fallback={<PageLoading></PageLoading>}>
             <Outlet />
           </Suspense>

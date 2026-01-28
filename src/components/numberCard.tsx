@@ -4,7 +4,6 @@ import { createStaticStyles } from 'antd-style'
 const classNames = createStaticStyles(({ css }) => ({
   statCard: css`
     border-radius: 12px;
-    height: 10rem;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
@@ -23,37 +22,79 @@ const classNames = createStaticStyles(({ css }) => ({
     font-size: 1.5rem;
     background: rgba(64, 158, 255, 0.1);
   `,
-  cardInfo: css``,
+  cardInfo: css`
+   margin-left: 0.8rem;
+  `,
   cardTitle: css`
     color: #606266;
-    font-size: 0.8rem;
-    padding-left: 0.8rem;
+    font-size: 0.875rem;
+    justify-content: center;
   `,
   cardValue: css`
-    font-size: 2rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
   `,
+  cardFooter: css`
+    height: 1px;
+    width: 100%;
+    transform: scaleY(0.5);
+    transform-origin: 0 0;
+    background-color: #ededed;
+  `,
+  compareData: css`
+  margin-top: 0.8rem;
+  font-size: 0.75rem;
+ 
+  `,
+compareStr:css`
+ color: #909399;
+`,
+green:css` color: #67C23A;
+`,
+red:css`
+ color: #F56C6C;
+`,
+
 }))
-const NumberCard: React.FC = () => {
+
+export interface NumberCardProps {
+  cardIcon: React.ReactNode;
+  title: string ;
+  value: number;
+  compareText: string;
+  compareValue: number;
+}
+
+const NumberCard: React.FC<NumberCardProps> = (props) => {
   return (
-    <Row gutter={16}>
-      <Col span={6}>
+   
         <Card className={classNames.statCard} variant="borderless">
           <div className={classNames.cardContent}>
             <div className={classNames.cardIcon}>
-              <slot name="Icons">5555</slot>
+              {props.cardIcon||<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"></svg>}
             </div>
             <div className={classNames.cardInfo}>
               <div className={classNames.cardTitle}>
-                <slot name="cardTitle">总教室数</slot>
+                {props.title||'总量'}
               </div>
               <div className={classNames.cardValue}>
-                <slot name="cardValue"></slot>
+            {props.value||'50'}
               </div>
             </div>
           </div>
+          <div className={classNames.cardFooter}></div>
+          <div className={ classNames.compareData}>
+            <span className={classNames.compareStr}>{props.compareText||'较上月增长'}</span>
+             &nbsp;
+            <span className={props.compareValue > 0 ? classNames.green : classNames.red}>
+  {props.compareValue}&nbsp;%
+</span>
+
+            
+          </div>
         </Card>
-      </Col>
-    </Row>
+    
   )
 }
 export default NumberCard

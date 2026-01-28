@@ -1,0 +1,86 @@
+{
+  "id": "5117717",
+  "name": "react",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "382956",
+      "name": "群蜂账号管理",
+      "font_class": "zhanghaoguanli",
+      "unicode": "e660",
+      "unicode_decimal": 58976
+    },
+    {
+      "icon_id": "7090087",
+      "name": "账号管理",
+      "font_class": "zhanghaoguanli1",
+      "unicode": "e71b",
+      "unicode_decimal": 59163
+    },
+    {
+      "icon_id": "11647726",
+      "name": "指标",
+      "font_class": "zhibiao",
+      "unicode": "e606",
+      "unicode_decimal": 58886
+    },
+    {
+      "icon_id": "11648076",
+      "name": "统计",
+      "font_class": "tongji",
+      "unicode": "e60c",
+      "unicode_decimal": 58892
+    },
+    {
+      "icon_id": "11649174",
+      "name": "机构列表",
+      "font_class": "jigouliebiao",
+      "unicode": "e61a",
+      "unicode_decimal": 58906
+    },
+    {
+      "icon_id": "11651444",
+      "name": "历年指标",
+      "font_class": "linianzhibiao",
+      "unicode": "e61f",
+      "unicode_decimal": 58911
+    },
+    {
+      "icon_id": "11651560",
+      "name": "数据采集",
+      "font_class": "shujucaiji",
+      "unicode": "e621",
+      "unicode_decimal": 58913
+    },
+    {
+      "icon_id": "11651853",
+      "name": "结果发布",
+      "font_class": "jieguofabu",
+      "unicode": "e624",
+      "unicode_decimal": 58916
+    },
+    {
+      "icon_id": "11652846",
+      "name": "计分汇总",
+      "font_class": "jifenhuizong",
+      "unicode": "e62c",
+      "unicode_decimal": 58924
+    },
+    {
+      "icon_id": "11653569",
+      "name": "图表",
+      "font_class": "tubiao",
+      "unicode": "e631",
+      "unicode_decimal": 58929
+    },
+    {
+      "icon_id": "11654094",
+      "name": "数据",
+      "font_class": "shuju",
+      "unicode": "e63d",
+      "unicode_decimal": 58941
+    }
+  ]
+}

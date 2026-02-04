@@ -1,0 +1,23 @@
+.error-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 0;
+}
+ .back-img {
+    width: 350px;
+    height: 350px;
+    background-size: contain;
+    margin-bottom: 20px;
+  }
+
+  .error-text {
+    font-size: 18px;
+    color: #666;
+    margin: 0;
+    font-family: "Microsoft YaHei", sans-serif;
+  }

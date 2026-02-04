@@ -5,6 +5,7 @@ const Layout = lazy(() => import('../views/Layout/index'))
 const LoginPage = lazy(() => import('../views/LoginPage/index'))
 // const ClassRoom = lazy(() => import('../views/classRoom/index'))
 const ClassRoom = lazy(() => import('../views/classRoom/index'))
+const Teacher = lazy(() => import('../views/teacher/index'))
 // 创建路由规则
 const router = createBrowserRouter([
   {
@@ -14,8 +15,12 @@ const router = createBrowserRouter([
       { path: '/', element: <Navigate to="/resources/classRoom" replace /> },
       {
         path: 'resources',
-        children: [{ path: 'classRoom', element: <ClassRoom></ClassRoom> }],
+        children: [
+          { path: 'classRoom', element: <ClassRoom></ClassRoom> },
+          { path: 'teacher', element: <Teacher></Teacher>}
+        ],
       },
+      
     ],
   },
   {

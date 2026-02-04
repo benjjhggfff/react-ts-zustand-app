@@ -9,7 +9,10 @@
   height: 60px;
   text-align: center;
   display: flex;
+  align-items: center; /* 垂直居中Logo和文字 */
+  justify-content: center;
   transition: all 0.3s ease;
+  /* 移除无效的position: sticky */
 }
 .logoTextActive {
   font-size: 27px;
@@ -17,20 +20,19 @@
   margin-left: 5px;
   color: #6f70a8;
   line-height: 60px;
-  //   水平方向
 }
 .logoTextInactive {
   display: none;
 }
 .menu {
-  height: 100vh;
+  /* 移除height: 100vh，由Sider控制高度 */
 }
 .content {
   background-color: var(--layoutBcg);
 }
 .header {
   padding: 0;
-  background:   var(--card-bg-color);
+  background: var(--card-bg-color);
   position: sticky;
   top: 0;
   z-index: 1;

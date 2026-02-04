@@ -36,7 +36,6 @@ const SideMenuAnHeader: React.FC = () => {
       icon: <AppstoreAddOutlined />,
       label: '排课操作',
       children: [
-        // 排课操作：统一为 /schedule/xxx 层级格式（和其他模块对齐）
         { key: '/schedule/auto', label: '自动排课' },
         { key: '/schedule/manual', label: '手动排课' },
         { key: '/schedule/preview', label: '预览课表' },
@@ -78,42 +77,51 @@ const SideMenuAnHeader: React.FC = () => {
   ]
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
-    // 过滤父菜单（parent-开头的key不跳转），只处理子菜单
     if (!key.startsWith('parent-')) {
-      navigate(key) // 跳转到对应路由路径
+      navigate(key)
     }
   }
 
   return (
-    <Layout>
+    <Layout style={{ height: '100vh' }}> {/* 关键：设置整个布局高度为视口高度 */}
+      {/* 修复1：给Sider设置固定定位，让整个侧边栏固定 */}
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
-        style={{ background: 'var(--card-bg-color)' }}
+        style={{ 
+          background: 'var(--card-bg-color)',
+          position: 'fixed', // 固定侧边栏
+          left: 0,
+          top: 0,
+          bottom: 0,
+          height: '100vh', // 高度占满视口
+          zIndex: 100 // 确保侧边栏在最上层
+        }}
       >
         <div className={styles.logo}>
           <LogoSvg />
           <h1
             className={`${styles.logoTextActive} ${!collapsed ? styles.logoTextActive : styles.logoTextInactive}`}
           >
-            {' '}
             智管有方
           </h1>
         </div>
 
+        {/* 修复2：移除Menu的fixed定位，恢复正常文档流 */}
         <Menu
           theme="light"
           mode="inline"
           className="menu"
-          // 正确绑定onClick事件（直接传函数，AntD自动传事件对象）
           onClick={handleMenuClick}
           style={{ background: 'var(--card-bg-color)' }}
           defaultSelectedKeys={['/resources/classRoom']}
           items={menuItems}
         />
       </Sider>
-      <Layout>
+
+      {/* 修复3：给内容区设置左侧内边距，避免被固定的侧边栏遮挡 */}
+      <Layout style={{ marginLeft: collapsed ? 80 : 200 }}>
         <Header className={styles.header}></Header>
 
         <Content
@@ -122,11 +130,11 @@ const SideMenuAnHeader: React.FC = () => {
             margin: '8px 8px',
             padding: 4,
             minHeight: minHeight,
-
             borderRadius: borderRadiusLG,
+            overflow: 'auto' // 内容区单独滚动，不影响侧边栏
           }}
         >
-          <ContentBreadcrumb  />
+          <ContentBreadcrumb />
           <Suspense fallback={<PageLoading></PageLoading>}>
             <Outlet />
           </Suspense>

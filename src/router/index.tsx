@@ -19,6 +19,11 @@ const router = createBrowserRouter([
       { path: '/', element: <Navigate to="/resources/classRoom" replace /> },
       {
         path: 'resources',
+        name: 'resources',
+        meta:{
+          title:'资源管理',
+          icon:'resources'
+        }
         children: [
           { path: 'classRoom', element: <ClassRoom></ClassRoom> },
           { path: 'teacher', element: <Teacher></Teacher>},

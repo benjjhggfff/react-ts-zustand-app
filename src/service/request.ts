@@ -1,35 +1,23 @@
+// src/utils/request.ts
 import axios, {
   type AxiosInstance,
- 
-   type AxiosResponse,
+  type AxiosResponse,
   AxiosError,
   type InternalAxiosRequestConfig,
-  type AxiosRequestHeaders,        // 使用 type 关键字标记仅类型导入
+  type AxiosRequestHeaders,
 } from 'axios';
-
 import { TIME_OUT } from './config';
-import Massage from '../utils/Massagee';
+import Message from '../utils/Massagee'; // 修正笔误：Massagee → Message
 
-// ========== 自定义类型定义（核心修正） ==========
-/**
- * 自定义拦截器类型（全局/单次请求）
- * 关键：请求拦截器参数改为 InternalAxiosRequestConfig（Axios v1.x 要求）
- */
+// ========== 自定义类型定义 ==========
 interface RequestInterceptors {
-  // 请求成功拦截：参数/返回值改为 InternalAxiosRequestConfig
   requestSuccessFn?: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig;
-  // 请求失败拦截：必须返回 Promise（Axios 规范）
   requestFailureFn?: (err: AxiosError) => Promise<AxiosError>;
-  // 响应成功拦截：入参是 AxiosResponse（全局拦截器未剥离前）
   responseSuccessFn?: (res: AxiosResponse) => any;
-  // 响应失败拦截：必须返回 Promise
   responseFailureFn?: (err: AxiosError) => Promise<AxiosError>;
 }
 
-/**
- * 扩展Axios配置，添加自定义拦截器属性
- * 关键：继承 InternalAxiosRequestConfig 而非 AxiosRequestConfig
- */
+// 仅扩展 interceptors，继承 InternalAxiosRequestConfig 原生属性（headers 为可选，无需重复声明）
 interface HYRequestConfig extends InternalAxiosRequestConfig {
   interceptors?: RequestInterceptors;
 }
@@ -41,139 +29,107 @@ class HYRequest {
   constructor(config: HYRequestConfig) {
     this.instance = axios.create(config);
 
-    // 全局请求拦截器（核心修正：config类型改为 InternalAxiosRequestConfig）
+    // 全局请求拦截器（自动添加 ngrok 头）
     this.instance.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        // 修复headers：强制初始化，避免undefined（解决类型报错核心）
-        config.headers = config.headers || ({} as AxiosRequestHeaders);
         config.headers['ngrok-skip-browser-warning'] = 'true';
         return config;
       },
-      (err: AxiosError) => {
-        // 失败拦截器必须返回 Promise.reject
-        return Promise.reject(err);
-      }
+      (err: AxiosError) => Promise.reject(err)
     );
 
-    // 全局响应拦截器（保留原有逻辑）
+    // 全局响应拦截器（401自动重登）
     this.instance.interceptors.response.use(
-      (res: AxiosResponse) => {
-        return res.data;
-      },
+      (res: AxiosResponse) => res.data,
       (err: AxiosError) => {
         if (err.response?.status === 401) {
           localStorage.removeItem('token');
-          Massage.error('登录已过期，请重新登录！');
-          setTimeout(() => {
-            window.location.href = '/login';
-          }, 2000);
+          Message.error('登录已过期，请重新登录！');
+          setTimeout(() => (window.location.href = '/login'), 2000);
         }
         return Promise.reject(err);
       }
     );
 
-    // 特定实例的自定义拦截器（修正失败回调默认值）
+    // 实例自定义拦截器
     if (config.interceptors) {
-      const {
-        requestSuccessFn,
-        requestFailureFn,
-        responseSuccessFn,
-        responseFailureFn
-      } = config.interceptors;
-
-      // 请求拦截器：处理成功/失败回调
+      const { requestSuccessFn, requestFailureFn, responseSuccessFn, responseFailureFn } = config.interceptors;
       if (requestSuccessFn) {
         this.instance.interceptors.request.use(
           requestSuccessFn,
-          requestFailureFn || ((err) => Promise.reject(err)) // 默认失败处理
+          requestFailureFn || ((err) => Promise.reject(err))
         );
       }
-
-      // 响应拦截器：处理成功/失败回调
       if (responseSuccessFn) {
         this.instance.interceptors.response.use(
           responseSuccessFn,
-          responseFailureFn || ((err) => Promise.reject(err)) // 默认失败处理
+          responseFailureFn || ((err) => Promise.reject(err))
         );
       }
     }
   }
 
-  /**
-   * 通用请求方法封装（修正泛型和拦截器逻辑）
-   */
-  request<T = any>(config: HYRequestConfig): Promise<T> {
-    // 单次请求的请求拦截处理（安全判断）
-    if (typeof config.interceptors?.requestSuccessFn === 'function') {
-      try {
-        config = config.interceptors.requestSuccessFn(config);
-      } catch (err) {
-        console.error('单次请求拦截器执行失败:', err);
+  // 【核心修改】参数改为 Partial<HYRequestConfig>，支持部分配置，默认值为 {} 避免空值
+  request<T = any>(config: Partial<HYRequestConfig> = {}): Promise<T> {
+    // 处理自定义请求拦截器（兼容 config 可能为空的情况）
+    if (config.interceptors?.requestSuccessFn) {
+      try { 
+        // 类型断言为完整配置，确保拦截器逻辑正常
+        config = config.interceptors.requestSuccessFn(config as InternalAxiosRequestConfig); 
+      } catch (err) { 
+        console.error('请求拦截器失败:', err); 
       }
     }
-
     return new Promise((resolve, reject) => {
       this.instance
-        .request(config) // 移除多余泛型，让TS自动推导
-        .then((res: T) => {
-          // 单次请求的响应拦截处理
-          if (typeof config.interceptors?.responseSuccessFn === 'function') {
-            try {
-              res = config.interceptors.responseSuccessFn(res) as T;
-            } catch (err) {
-              console.error('单次响应拦截器执行失败:', err);
-            }
+        .request(config as InternalAxiosRequestConfig) // 类型断言，兼容 axios 内部类型
+        .then((res: AxiosResponse) => {
+          let data = res.data;
+          if (config.interceptors?.responseSuccessFn) {
+            try { data = config.interceptors.responseSuccessFn(res); } catch (err) { console.error('响应拦截器失败:', err); }
           }
-          resolve(res);
+          resolve(data as T);
         })
         .catch((err: AxiosError) => {
-          reject(err);
           console.error('请求失败:', err);
+          reject(err);
         });
     });
   }
 
-  // 以下HTTP方法保留原有逻辑，仅修正config类型
-  get<T = any>(config: HYRequestConfig): Promise<T> {
-    return this.request<T>({ ...config, method: 'GET' });
+  // 【同步修改】所有快捷方法参数也改为 Partial<HYRequestConfig>
+  get<T = any>(config: Partial<HYRequestConfig> = {}): Promise<T> { 
+    return this.request<T>({ ...config, method: 'GET' }); 
   }
-
-  post<T = any>(config: HYRequestConfig): Promise<T> {
-    return this.request<T>({ ...config, method: 'POST' });
+  post<T = any>(config: Partial<HYRequestConfig> = {}): Promise<T> { 
+    return this.request<T>({ ...config, method: 'POST' }); 
   }
-
-  delete<T = any>(config: HYRequestConfig): Promise<T> {
-    return this.request<T>({ ...config, method: 'DELETE' });
+  delete<T = any>(config: Partial<HYRequestConfig> = {}): Promise<T> { 
+    return this.request<T>({ ...config, method: 'DELETE' }); 
   }
-
-  patch<T = any>(config: HYRequestConfig): Promise<T> {
-    return this.request<T>({ ...config, method: 'PATCH' });
+  patch<T = any>(config: Partial<HYRequestConfig> = {}): Promise<T> { 
+    return this.request<T>({ ...config, method: 'PATCH' }); 
   }
 }
 
-// ========== 创建请求实例（修复headers赋值） ==========
+// ========== 创建全局请求实例（逻辑不变，自动携带Token） ==========
 const Request = new HYRequest({
   baseURL: '/api',
   timeout: TIME_OUT,
-  headers: {}, // 添加必需的 headers 属性
+  headers: {} as AxiosRequestHeaders,
   interceptors: {
     requestSuccessFn: (config: InternalAxiosRequestConfig) => {
+      // 免Token接口（登录/注册）
       const noTokenUrls = ['/login', '/register'];
       const url = config.url ?? '';
+      if (noTokenUrls.some((item) => url.includes(item))) return config;
 
-      if (noTokenUrls.some((noTokenUrl) => url.includes(noTokenUrl))) {
-        return config;
-      }
-
+      // 自动携带Token
       const token = localStorage.getItem('token');
-      if (token) {
-        config.headers = config.headers || ({} as AxiosRequestHeaders);
-        config.headers.token = token;
-      }
-
+      if (token) config.headers.token = token;
       return config;
-    }
-  }
+    },
+  },
 });
 
 export default Request;

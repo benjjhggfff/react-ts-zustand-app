@@ -12,7 +12,7 @@ export interface UserInfo {
 
 export interface ApiResponse<T = any> {
   code: number;
-  data: T;
+  data?: T;
   msg: string;
 }
 // 菜单项类型

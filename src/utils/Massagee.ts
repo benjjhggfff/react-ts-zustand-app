@@ -1,29 +1,12 @@
+// Message.ts
+import { message } from 'antd'
 
-import { message } from 'antd';
-const [messageApi] = message.useMessage();
- 
-export default  class Message{
-
-  static success = (msg: string) => {
-    messageApi.open({
-      type: 'success',
-        content: msg,
-    });
-  };
-
-   static error = (msg: string) => {
-    messageApi.open({
-      type: 'error',
-      content: msg,
-    });
-  };
-
-  static warning = (msg: string) => {
-    messageApi.open({
-      type: 'warning',
-      content: msg,
-    });
-  };
-
+// 直接导出 antd 的 message 方法
+const Message = {
+  success: (msg: string) => message.success(msg),
+  error: (msg: string) => message.error(msg),
+  warning: (msg: string) => message.warning(msg),
+  info: (msg: string) => message.info(msg),
 }
 
+export default Message

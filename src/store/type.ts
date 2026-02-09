@@ -1,5 +1,12 @@
-import {type UserInfo,type MenuItem} from '../constants/index'
-
+import {type MenuItem} from '../constants/index'
+export interface UserInfo {
+    userId:string;
+    userName:string;
+    avatar:string;
+    role:number;
+    // 部门/学院
+    department:string;
+}
 
 export interface UserState {
   baseInfo: UserInfo | null;

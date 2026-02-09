@@ -1,10 +1,13 @@
 import AppRouter from './router'
-import { Button } from 'antd'
+import { Provider } from 'react-redux'
+import store from './store'
 import './index.scss'
 function App() {
   return (
     <>
-      <AppRouter />
+      <Provider store={store}>
+        <AppRouter />
+      </Provider>
     </>
   )
 }

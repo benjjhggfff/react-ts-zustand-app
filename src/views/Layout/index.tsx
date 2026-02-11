@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import type { MenuProps } from 'antd'
 import { useNavigate, Outlet } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
+import { useAppSelector } from '../../../hook' // 导入Redux hooks
 import ContentBreadcrumb from './Breadcrumb'
 const PageLoading = lazy(() => import('../../components/loading'))
 import {
@@ -13,10 +14,39 @@ import {
 import { Button, Layout, Menu, theme } from 'antd'
 import LogoSvg from '../../components/LogoSVg'
 import styles from './layout.module.scss'
+import type { MenuItem as AuthMenuItem } from '../../constants/routerPermiss' // 导入你的菜单类型
 
 const { Header, Sider, Content } = Layout
 
-type MenuItem = Required<MenuProps>['items'][number]
+// 定义antd Menu需要的Item类型
+type AntdMenuItem = Required<MenuProps>['items'][number]
+
+// 图标映射：把mock里的icon字符串转成实际的antd图标组件
+const iconMap = {
+  AppstoreAddOutlined: <AppstoreAddOutlined />,
+  BankOutlined: <BankOutlined />,
+  BarChartOutlined: <BarChartOutlined />,
+  UserAddOutlined: <UserAddOutlined />,
+}
+
+// 核心函数：把Redux中的menuList转换成antd Menu需要的格式
+const convertMenuToAntdItems = (menuList: AuthMenuItem[]): AntdMenuItem[] => {
+  return menuList.map((menu, index) => {
+    // 处理子菜单
+    const children =
+      menu.children?.map(child => ({
+        key: child.path, // 子菜单key=路径，用于跳转
+        label: child.title, // 子菜单显示文本
+      })) || []
+
+    return {
+      key: `parent-${index}`, // 父菜单key（自定义）
+      icon: iconMap[menu.icon as keyof typeof iconMap] || <AppstoreAddOutlined />, // 映射图标
+      label: menu.title, // 父菜单显示文本
+      children: children, // 子菜单列表
+    }
+  })
+}
 
 const SideMenuAnHeader: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false)
@@ -25,78 +55,40 @@ const SideMenuAnHeader: React.FC = () => {
   } = theme.useToken()
 
   const navigate = useNavigate()
+  // 核心：从Redux获取动态菜单列表（登录后mock返回的menuList）
+  const { menuList } = useAppSelector(state => state.user)
+  // 动态生成antd菜单
+  const menuItems = convertMenuToAntdItems(menuList)
 
   // 获取页面高度
   const windowHight = window.innerHeight
   const minHeight = windowHight - 112
 
-  const menuItems: MenuItem[] = [
-    {
-      key: 'parent-0',
-      icon: <AppstoreAddOutlined />,
-      label: '排课操作',
-      children: [
-        { key: '/schedule/auto', label: '自动排课' },
-        { key: '/schedule/manual', label: '手动排课' },
-        { key: '/schedule/preview', label: '预览课表' },
-      ],
-    },
-    {
-      key: 'parent-1',
-      icon: <BankOutlined />,
-      label: '资源管理',
-      children: [
-        { key: '/resources/classRoom', label: '教室管理' },
-        { key: '/resources/teacher', label: '教师管理' },
-        { key: '/resources/class', label: '班级管理' },
-        { key: '/resources/course', label: '课程管理' },
-      ],
-    },
-    {
-      key: 'parent-2',
-      icon: <BarChartOutlined />,
-      label: '数据统计',
-      children: [
-        { key: '/stat/schedule', label: '排课统计' },
-        { key: '/stat/classroom', label: '教室使用统计' },
-        { key: '/stat/teacher', label: '教师使用统计' },
-        { key: '/stat/class', label: '班级使用统计' },
-        { key: '/stat/course', label: '课程使用统计' },
-      ],
-    },
-    {
-      key: 'parent-3',
-      icon: <UserAddOutlined />,
-      label: '用户管理',
-      children: [
-        { key: '/user/list', label: '用户列表' },
-        { key: '/user/role', label: '角色管理' },
-        { key: '/user/permission', label: '权限管理' },
-      ],
-    },
-  ]
-
+  // 处理菜单点击跳转（保留原有逻辑）
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     if (!key.startsWith('parent-')) {
+      // 只处理子菜单点击
       navigate(key)
     }
   }
 
+  // 动态默认选中项：取第一个有效子菜单路径（替代原有的静态 '/resources/classRoom'）
+  const defaultSelectedKey = menuList[0]?.children?.[0]?.path || '/resources/classRoom'
+
   return (
-    <Layout style={{ height: '100vh' }}> {/* 关键：设置整个布局高度为视口高度 */}
-      {/* 修复1：给Sider设置固定定位，让整个侧边栏固定 */}
+    <Layout style={{ height: '100vh' }}>
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
-        style={{ 
+        style={{
           background: 'var(--card-bg-color)',
-          position: 'fixed', // 固定侧边栏
+          position: 'fixed',
           left: 0,
           top: 0,
           bottom: 0,
-          height: '100vh', // 高度占满视口
-          zIndex: 100 // 确保侧边栏在最上层
+          height: '100vh',
+          zIndex: 100,
         }}
       >
         <div className={styles.logo}>
@@ -108,19 +100,18 @@ const SideMenuAnHeader: React.FC = () => {
           </h1>
         </div>
 
-        {/* 修复2：移除Menu的fixed定位，恢复正常文档流 */}
+        {/* 关键修改：使用动态menuItems和动态默认选中项 */}
         <Menu
           theme="light"
           mode="inline"
           className="menu"
           onClick={handleMenuClick}
           style={{ background: 'var(--card-bg-color)' }}
-          defaultSelectedKeys={['/resources/classRoom']}
-          items={menuItems}
+          defaultSelectedKeys={[defaultSelectedKey]} // 动态默认选中
+          items={menuItems} // 动态菜单列表
         />
       </Sider>
 
-      {/* 修复3：给内容区设置左侧内边距，避免被固定的侧边栏遮挡 */}
       <Layout style={{ marginLeft: collapsed ? 80 : 200 }}>
         <Header className={styles.header}></Header>
 
@@ -131,7 +122,7 @@ const SideMenuAnHeader: React.FC = () => {
             padding: 4,
             minHeight: minHeight,
             borderRadius: borderRadiusLG,
-            overflow: 'auto' // 内容区单独滚动，不影响侧边栏
+            overflow: 'auto',
           }}
         >
           <ContentBreadcrumb />

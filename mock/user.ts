@@ -139,7 +139,7 @@ export default [
       console.log('[Mock] 登录请求:', { userId, password })
 
       // 管理员账号：admin/123456
-      if (userId === 'admin' && password === '123456') {
+      if (userId === 'admin' && password === 'h123456') {
         return {
           code: 200,
           msg: '管理员登录成功',
@@ -167,7 +167,7 @@ export default [
 
   // 获取用户信息接口（GET /api/user/info）- 强类型约束
   {
-    url: '/api/user/info',
+    url: '/api/userinfo',
     method: 'get',
     timeout: 300,
     response: (req): ApiResponse<UserInfoResponse> => {

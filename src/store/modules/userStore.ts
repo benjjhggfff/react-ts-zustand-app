@@ -1,100 +1,125 @@
-import { createSlice, type PayloadAction, createAsyncThunk } from '@reduxjs/toolkit'
-import { type UserState } from '../type'
-import { type ApiResponse, type LoginParams } from '../../constants/index'
-import { loginApi, fetchUserInfoApi } from '../../api/user'
-const initialState: UserState = {
-  baseInfo: {
-    userId: '',
-    userName: '',
-    avatar: '',
-    role: 7,
-    department: '',
-  },
-  token: '',
-  loading: false,
-  error: null,
-}
-// 异步
-/**
- * 登录异步Action,返回值类型为string（token）或ApiResponse（错误信息），参数类型为LoginParams，rejectValue类型为string（错误消息）
- */
-export const loginAsync = createAsyncThunk<
-  string | ApiResponse<string>,
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { loginApi, fetchUserInfoApi } from '../../api/user' // 你的接口文件
+import type {
   LoginParams,
-  { rejectValue: string }
->('user/login', async (params, { rejectWithValue }) => {
+  LoginResponse,
+  UserInfoResponse,
+  UserInfo,
+  ApiResponse,
+} from '../../constants/index' // 你的类型文件
+import type { MenuItem } from '../../constants/routerPermiss' // 你的菜单类型文件
+// 1. 登录异步Thunk（无类型错误版本）
+export const loginAsync = createAsyncThunk<
+  LoginResponse, // 成功返回类型：LoginResponse = ApiResponse<LoginData>
+  LoginParams, // 入参类型：LoginParams
+  { rejectValue: string } // 失败抛出类型：string
+>('user/login', async (params: LoginParams, { rejectWithValue }) => {
   try {
-    return await loginApi(params) // 调用封装API，无需处理Axios
-  } catch (err) {
-    const error = err as Error
-    return rejectWithValue(error.message || '网络错误')
+    // 强制指定返回类型为 LoginResponse，确保类型匹配
+    const response: LoginResponse = await loginApi(params)
+    console.log(response)
+    // 业务校验：code≠200 视为失败，抛出错误
+    if (response.code !== 200) {
+      return rejectWithValue(response.msg || '登录失败')
+    }
+    // 本地存储token
+    localStorage.setItem('token', response.data?.token || '')
+
+    // 成功分支：仅返回 LoginResponse 类型
+    return response
+  } catch (err: any) {
+    // 异常分支：仅抛出字符串错误，绝不返回裸字符串
+    const errorMsg = err?.msg || err?.message || '登录请求失败'
+    return rejectWithValue(errorMsg)
   }
 })
 
-/**
- * 获取用户信息异步Action
- */
+// 2. 获取用户信息异步Thunk（配套实现）
 export const fetchUserInfo = createAsyncThunk<
-  ApiResponse<{ user: any | ApiResponse<string>; privileges: string[]; menu: any[] }>,
-  void,
-  { rejectValue: ApiResponse }
+  ApiResponse<UserInfoResponse>, // 成功返回：ApiResponse<UserInfo>
+  void, // 无入参
+  { rejectValue: string }
 >('user/fetchUserInfo', async (_, { rejectWithValue }) => {
   try {
-    return await fetchUserInfoApi() // 调用封装API，无需传Token
-  } catch (err) {
-    const error = err as any
-    return rejectWithValue(error.response?.data || { code: 500, msg: '请求失败' })
+    const response: ApiResponse<UserInfo> = await fetchUserInfoApi()
+    if (response.code !== 200) {
+      return rejectWithValue(response.msg || '获取用户信息失败')
+    }
+    return response
+  } catch (err: any) {
+    return rejectWithValue(err?.message || '获取用户信息请求失败')
   }
 })
 
-const userLoginSlice = createSlice({
-  name: 'userLogin',
+// 3. 用户Slice初始状态
+interface UserState {
+  userInfo: UserInfo | null
+  token: string
+  loading: boolean
+  error: string | null
+  menuList: MenuItem[] // 存储用户的菜单列表
+  privileges: string[] // 存储用户的权限标识列表
+}
+
+const initialState: UserState = {
+  userInfo: null,
+  token: localStorage.getItem('token') || '',
+  loading: false,
+  error: null,
+  menuList: JSON.parse(localStorage.getItem('menuList') || '[]'),
+  privileges: JSON.parse(localStorage.getItem('privileges') || '[]'),
+}
+
+// 4. 用户Slice
+const userSlice = createSlice({
+  name: 'user',
   initialState,
-  // 编写修改数据的方法，同步方法
   reducers: {
-    setToken(state: UserState, action: PayloadAction<any>) {
-      let data: UserState = action.payload
-      state.token = data.token
-      state.baseInfo = data.baseInfo
-    },
-    logout(state: UserState) {
+    logout: state => {
+      state.userInfo = null
       state.token = ''
-      state.baseInfo = {
-        userId: '',
-        userName: '',
-        avatar: '',
-        role: 7,
-        department: '',
-      }
+      state.menuList = []
+      state.privileges = []
+      localStorage.removeItem('token')
+      localStorage.removeItem('menuList')
+      localStorage.removeItem('privileges')
     },
   },
   extraReducers: builder => {
     builder
-      .addCase(loginAsync.fulfilled, (state: UserState, action: PayloadAction<string>) => {
-        state.loading = false
-        state.token = action.payload
+      // 登录请求状态
+      .addCase(loginAsync.pending, state => {
+        state.loading = true
+        state.error = null
       })
-      .addCase(loginAsync.pending, (state: UserState) => {
+      .addCase(loginAsync.fulfilled, (state, action) => {
+        state.loading = false
+        state.token = action.payload.data?.token || ''
+        localStorage.setItem('token', state.token)
+      })
+      .addCase(loginAsync.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload || '登录失败'
+      })
+      // 获取用户信息状态
+      .addCase(fetchUserInfo.pending, state => {
         state.loading = true
       })
-      .addCase(
-        loginAsync.rejected,
-        (state: UserState, action: PayloadAction<string | undefined>) => {
-          state.loading = false
-          state.error = action.payload || '登录失败'
-        }
-      )
-
-      .addCase(fetchUserInfo.fulfilled, (state: UserState, action: PayloadAction<any>) => {
-        const { user } = action.payload.data || {}
-        if (user) {
-          state.baseInfo = user
-        }
+      .addCase(fetchUserInfo.fulfilled, (state, action) => {
+        state.loading = false
+        state.userInfo = action.payload.data?.user || null
+        // 存储菜单和权限到 state + localStorage（刷新不丢失）
+        state.menuList = action.payload.data?.permission.menu || []
+        state.privileges = action.payload.data?.permission.privileges || []
+        localStorage.setItem('menuList', JSON.stringify(state.menuList))
+        localStorage.setItem('privileges', JSON.stringify(state.privileges))
+      })
+      .addCase(fetchUserInfo.rejected, (state, action) => {
+        state.loading = false
+        state.error = '获取用户信息失败'
       })
   },
 })
 
-const { setToken } = userLoginSlice.actions
-const reducers = userLoginSlice.reducer
-export default reducers
-export { setToken }
+export const { logout } = userSlice.actions
+export default userSlice.reducer

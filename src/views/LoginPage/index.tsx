@@ -3,12 +3,13 @@ import styles from './Login.module.scss'
 import { Input, Form, Checkbox, message } from 'antd'
 import type { FormProps } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { loginAsync, fetchUserInfo } from '../../store/modules/userStore'
 import type { LoginParams } from '../../constants/index'
 import type { RootState } from '../../store/type'
 import { useNavigate } from 'react-router-dom'
-
+import { useAppDispatch } from '../../store/index'
+import type { ApiResponse } from '../../constants/index'
 // 定义表单字段类型
 type FieldType = {
   username: string
@@ -17,7 +18,7 @@ type FieldType = {
 }
 
 export default function LoginPage() {
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { loading, error } = useSelector((state: RootState) => state.user)
   const [currentForm, setCurrentForm] = useState<'login' | 'register'>('login')
@@ -31,6 +32,7 @@ export default function LoginPage() {
   }
 
   // 登录处理
+
   const handleLogin: FormProps<FieldType>['onFinish'] = async values => {
     try {
       const loginParams: LoginParams = {
@@ -38,18 +40,15 @@ export default function LoginPage() {
         password: values.password,
       }
 
-      // 登录请求
-      const result = await dispatch(loginAsync(loginParams)).unwrap()
-      console.log('登录结果:', result) // 调试输出登录结果
-      // 根据实际API返回结构调整
+      // 现在dispatch可以正确识别AsyncThunkAction和unwrap()
+      const result = (await dispatch(loginAsync(loginParams)).unwrap()) as ApiResponse
+      console.log('登录结果:', result)
       if (result) {
-        // 获取用户信息
         await dispatch(fetchUserInfo()).unwrap()
         message.success('登录成功！')
-        navigate('/home')
+        navigate('/')
       }
     } catch (err: any) {
-      // 错误处理
       const errorMsg = err?.message || err?.msg || '登录失败，请重试'
       message.error(errorMsg)
     }

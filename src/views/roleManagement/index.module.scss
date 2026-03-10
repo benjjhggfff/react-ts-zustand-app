@@ -1,0 +1,75 @@
+.role-management {
+  box-sizing: border-box;
+  padding: 20px;
+  background-color: #f0f2f5;
+
+  .role-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-left: 4px solid #1890ff;
+  }
+
+  .role-header-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e6f7ff;
+    display: flex;
+    flex-direction: column;
+
+    .role-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1890ff;
+    }
+
+    .role-desc {
+      font-size: 14px;
+      color: #69c0ff;
+      margin-bottom: 20px;
+    }
+
+    .add-role-button {
+      align-self: flex-start;
+      font-weight: 500;
+      background-color: #1890ff;
+      border-color: #1890ff;
+
+      &:hover {
+        background-color: #40a9ff;
+        border-color: #40a9ff;
+      }
+    }
+  }
+
+  .role-table-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border: 1px solid #e6f7ff;
+  }
+
+  .role-table {
+    width: 100%;
+
+    .ant-table-thead > tr > th {
+      background-color: #e6f7ff;
+      font-weight: 600;
+      color: #1890ff;
+    }
+
+    .ant-table-tbody > tr:hover {
+      background-color: #f0f9ff;
+    }
+
+    .ant-table-tbody > tr > td {
+      border-bottom: 1px solid #f0f0f0;
+    }
+  }
+
+  .role-modal {
+    border-radius: 8px;
+    border-left: 4px solid #1890ff;
+  }
+}

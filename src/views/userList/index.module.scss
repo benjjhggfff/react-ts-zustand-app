@@ -1,0 +1,150 @@
+// 定义设计变量（方便全局统一修改）
+:root {
+  --bg-color: #f0f2f5;
+  --card-bg: #ffffff;
+  --header-color: #333;
+  --text-secondary: #666;
+  --filter-bg: #f8f9fa;
+  --border-radius: 8px;
+  --box-shadow-light: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --box-shadow-table: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --transition-base: all 0.3s ease;
+}
+
+.user-list {
+  box-sizing: border-box;
+  min-height: 100vh; // 保证内容不足时背景铺满
+  padding: 20px;
+  background-color: var(--bg-color);
+
+  // 卡片容器
+  .user-card {
+    border-radius: var(--border-radius);
+    background-color: var(--card-bg);
+    box-shadow: var(--box-shadow-light);
+    overflow: hidden; // 保证圆角裁剪
+  }
+
+  // 标题区域
+  .section-header {
+    margin-bottom: 24px;
+    padding: 0 4px; // 增加左右内边距，避免文字贴边
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--header-color);
+      line-height: 1.4;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+  }
+
+  // 搜索筛选区域
+  .search-filter {
+    margin-bottom: 24px;
+    padding: 24px 20px; // 增加垂直内边距，视觉更舒适
+    background-color: var(--filter-bg);
+    border-radius: var(--border-radius);
+    transition: var(--transition-base);
+
+    // 响应式调整：小屏时搜索框占满
+    @media (max-width: 768px) {
+      padding: 16px;
+    }
+  }
+
+  // 搜索输入框
+  .search-input {
+    width: 100%;
+    :global(.ant-input-search-button) {
+      height: 100%; // 让按钮高度自适应（与输入框对齐）
+    }
+  }
+
+  // 筛选下拉框
+  .filter-select {
+    width: 100%;
+  }
+
+  // 重置按钮样式（优化间距）
+  .reset-button {
+    margin-right: 12px; // 与新增按钮保持合理间距
+    &:hover {
+      opacity: 0.85; // 增加微交互
+    }
+  }
+
+  // 新增按钮
+  .add-button {
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); // 轻微凸起感
+  }
+
+  // 表格容器
+  .table-container {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-table);
+    overflow: hidden;
+    // 保证内部表格滚动时不破坏圆角
+  }
+
+  // 表格样式
+  .user-table {
+    width: 100%;
+
+    // 表头样式
+    :global(.ant-table-thead) > tr > th {
+      background-color: var(--filter-bg);
+      font-weight: 600;
+      color: var(--header-color);
+      border-bottom: 2px solid #e8e8e8; // 增强视觉分割
+    }
+
+    // 行悬停效果
+    :global(.ant-table-tbody) > tr:hover {
+      background-color: #f5f7fa;
+      transition: var(--transition-base);
+    }
+
+    // 操作按钮列（防止换行）
+    :global(.ant-table-cell) .ant-space {
+      flex-wrap: wrap;
+      gap: 8px; // 控制间距
+    }
+  }
+
+  // 模态框样式
+  .user-modal {
+    border-radius: var(--border-radius);
+    // 模态框内容样式优化
+    .ant-modal-content {
+      overflow: hidden;
+      border-radius: var(--border-radius);
+    }
+    .ant-modal-header {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 24px;
+    }
+    .ant-modal-body {
+      padding: 24px;
+      max-height: 70vh; // 限制高度，内容过多时可滚动
+      overflow-y: auto;
+    }
+    .ant-modal-footer {
+      border-top: 1px solid #f0f0f0;
+      padding: 10px 24px;
+    }
+  }
+
+  // 全局微交互（可选）
+  button {
+    transition: var(--transition-base);
+  }
+}

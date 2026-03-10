@@ -31,14 +31,11 @@ export default function AppRouter() {
       ),
       children: [
         ...authRouter,
-        {
-          path: '/setting/userInfo',
-          element: <SettingUserInfo />,
-        },
+
         {
           path: '/',
           element: token ? (
-            <Navigate to="/setting/userInfo" replace />
+            <Navigate to="/user/userInfo" replace />
           ) : (
             <Navigate to="/login" replace />
           ),

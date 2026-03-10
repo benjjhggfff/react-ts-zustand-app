@@ -3,15 +3,64 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>react-ts-zustand-app</title>
+    <style>
+      /* 原有基础样式保留 */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        font-size: 16px;
+      }
+
+      @media (min-width: 1920px) {
+        html {
+          font-size: 17px; /* 小幅放大字体，避免间距过宽 */
+        }
+        .main-content {
+          padding: 2rem;
+        }
+      }
+      /* 中屏PC（1366-1920px）- 默认样式已覆盖 */
+      /* 小屏PC（<1366px） */
+      @media (max-width: 1366px) {
+        html {
+          font-size: 15px; /* 缩小字体 */
+        }
+        .sidebar {
+          width: 14rem; /* 缩窄侧边栏 */
+        }
+        .main-content {
+          padding: 1rem;
+        }
+        .user-info {
+          grid-template-columns: 1fr; /* 个人信息改为单列 */
+        }
+      }
+      /* 平板尺寸（<768px）- 侧边栏折叠/隐藏 */
+      @media (max-width: 768px) {
+        .sidebar {
+          width: 4rem; /* 折叠为图标栏 */
+          padding: 1rem 0.5rem;
+        }
+        .sidebar-menu-item {
+          text-align: center;
+          padding: 0.6rem 0;
+        }
+        .sidebar-menu-item span {
+          display: none; /* 隐藏文字，只留图标 */
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx" ></script>
+    <div id="root">
+      <!-- 这里是React渲染的区域，以上样式类名需要和React组件的className对应 -->
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
     <script src="//at.alicdn.com/t/c/font_5117717_il4rhi1l238.js"></script>
   </body>
 </html>

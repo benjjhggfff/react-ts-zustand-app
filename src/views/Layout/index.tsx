@@ -73,7 +73,7 @@ const SideMenuAnHeader: React.FC = () => {
   }
 
   // 动态默认选中项：取第一个有效子菜单路径（替代原有的静态 '/resources/classRoom'）
-  const defaultSelectedKey = menuList[0]?.children?.[0]?.path || '/resources/classRoom'
+  const defaultSelectedKey = '/user/userInfo'
 
   return (
     <Layout style={{ height: '100vh' }}>

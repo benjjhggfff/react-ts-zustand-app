@@ -1,0 +1,102 @@
+// index.module.scss
+.container {
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  padding: 24px;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.filterCard {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  .filterBar {
+    padding: 8px 0;
+  }
+
+  .filterItem {
+    margin-bottom: 0;
+    :global(.ant-form-item-label) {
+      padding-bottom: 4px;
+    }
+  }
+}
+.batchActions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #d9d9d9;
+  display: flex;
+  justify-content: flex-end;
+}
+.calendarCard {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  :global(.ant-card-head) {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0 20px;
+  }
+
+  :global(.ant-card-body) {
+    padding: 20px;
+  }
+}
+
+.footer {
+  margin-top: 24px;
+  text-align: center;
+}
+
+// 课程弹窗样式
+.courseModal {
+  :global(.ant-modal-content) {
+    border-radius: 12px;
+  }
+  :global(.ant-modal-header) {
+    border-radius: 12px 12px 0 0;
+    padding: 16px 24px;
+  }
+}
+// 在 index.module.scss 中添加
+.calendarWrapper {
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+
+  :global(.fc-event) {
+    cursor: pointer;
+    border: none;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+.calendarEvent {
+  .eventTitle {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .eventMeta {
+    font-size: 11px;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

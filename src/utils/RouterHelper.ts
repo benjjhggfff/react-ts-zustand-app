@@ -9,6 +9,11 @@ const lazyLoad = (path: string) => {
     '/resources/classRoom': () => import('../views/classRoom/index'),
     '/resources/teacher': () => import('../views/teacher/index'),
     '/resources/student': () => import('../views/studentPage/index'),
+    '/resources/course': () => import('../views/course/index'),
+    '/schedule/edit': () => import('../views/scheduleEdit/index'),
+    '/user/userInfo': () => import('../views/userPage/index'),
+    '/user/list': () => import('../views/userList/index'),
+    '/user/role': () => import('../views/userManagement/index'),
     // 后续新增页面，在这里补充映射
   }
   return React.lazy(pathMap[path] || (() => import('../common/404')))

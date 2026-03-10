@@ -1,0 +1,235 @@
+// 定义 CSS 变量（可抽离到全局，便于主题切换）
+:root {
+  --bg-color: #f0f2f5;
+  --card-bg: #ffffff;
+  --header-color: #333;
+  --text-secondary: #666;
+  --filter-bg: #f8f9fa;
+  --border-radius: 8px;
+  --box-shadow-light: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --box-shadow-table: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --transition-base: all 0.3s ease;
+  --primary-color: #1890ff;
+  --primary-light: #e6f7ff;
+  --primary-hover: #40a9ff;
+}
+
+.user-management {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: var(--bg-color);
+
+  // 通用卡片样式
+  .user-card,
+  .role-card {
+    border-radius: var(--border-radius);
+    background-color: var(--card-bg);
+    box-shadow: var(--box-shadow-light);
+    overflow: hidden;
+  }
+
+  // 角色卡片增加左侧高亮
+  .role-card {
+    border-left: 4px solid var(--primary-color);
+  }
+
+  // Tab 切换区域
+  .tab-header {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0 24px 10px 24px;
+
+    .tab-button {
+      margin-right: 15px;
+      font-size: 16px;
+      padding: 8px 16px;
+      transition: var(--transition-base);
+    }
+  }
+
+  // ===== 用户管理模块 =====
+  .user-section {
+    padding: 0 24px 24px;
+  }
+
+  .section-header {
+    margin-bottom: 24px;
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--header-color);
+      line-height: 1.4;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+  }
+
+  .search-filter {
+    margin-bottom: 24px;
+    padding: 24px 20px;
+    background-color: var(--filter-bg);
+    border-radius: var(--border-radius);
+    transition: var(--transition-base);
+
+    @media (max-width: 768px) {
+      padding: 16px;
+    }
+  }
+
+  .search-input {
+    width: 100%;
+
+    :global(.ant-input-search-button) {
+      height: 100%;
+    }
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  .reset-button {
+    margin-right: 12px;
+
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+
+  .add-button {
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .table-container {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-table);
+    overflow: hidden;
+  }
+
+  .user-table {
+    width: 100%;
+
+    :global(.ant-table-thead) > tr > th {
+      background-color: var(--filter-bg);
+      font-weight: 600;
+      color: var(--header-color);
+      border-bottom: 2px solid #e8e8e8;
+    }
+
+    :global(.ant-table-tbody) > tr:hover {
+      background-color: #f5f7fa;
+      transition: var(--transition-base);
+    }
+  }
+
+  // ===== 角色管理模块 =====
+  .role-section {
+    padding: 0 24px 24px;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+  }
+
+  .role-header-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+
+    .role-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--primary-color);
+    }
+
+    .role-desc {
+      font-size: 14px;
+      color: #69c0ff;
+      margin: 0;
+    }
+
+    .add-role-button {
+      font-weight: 500;
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+
+      &:hover {
+        background-color: var(--primary-hover);
+        border-color: var(--primary-hover);
+      }
+    }
+  }
+
+  .role-table-container {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-table);
+    overflow: hidden;
+    border: 1px solid var(--primary-light);
+  }
+
+  .role-table {
+    width: 100%;
+
+    :global(.ant-table-thead) > tr > th {
+      background-color: var(--primary-light);
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    :global(.ant-table-tbody) > tr:hover {
+      background-color: #f0f9ff;
+    }
+
+    :global(.ant-table-tbody) > tr > td {
+      border-bottom: 1px solid #f0f0f0;
+    }
+  }
+
+  // ===== 模态框样式 =====
+  .user-modal,
+  .role-modal {
+    border-radius: var(--border-radius);
+
+    .ant-modal-content {
+      overflow: hidden;
+      border-radius: var(--border-radius);
+    }
+    .ant-modal-header {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 24px;
+    }
+    .ant-modal-body {
+      padding: 24px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .ant-modal-footer {
+      border-top: 1px solid #f0f0f0;
+      padding: 10px 24px;
+    }
+  }
+
+  .role-modal {
+    border-left: 4px solid var(--primary-color);
+  }
+
+  // 通用按钮过渡
+  button {
+    transition: var(--transition-base);
+  }
+}

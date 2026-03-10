@@ -46,7 +46,7 @@ export default function LoginPage() {
       if (result) {
         await dispatch(fetchUserInfo()).unwrap()
         message.success('登录成功！')
-        navigate('/')
+        navigate('/user/userInfo')
       }
     } catch (err: any) {
       const errorMsg = err?.message || err?.msg || '登录失败，请重试'

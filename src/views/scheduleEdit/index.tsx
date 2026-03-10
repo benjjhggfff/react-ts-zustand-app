@@ -7,6 +7,7 @@ import ScheduleCalendar from './components/ScheduleCalendar'
 import CourseModal from './components/CourseModal'
 import BatchShiftModal from './components/BatchShiftModal'
 import ExcelImportModal from './components/ExcelImportModal'
+import HistoryModal from './components/HistoryModal' // 需要新建
 import styles from './index.module.scss'
 
 const ScheduleEditPage: React.FC = () => {
@@ -35,6 +36,12 @@ const ScheduleEditPage: React.FC = () => {
     batchShiftByTeacher,
     importFromExcel,
     exportToExcel,
+    // 新属性
+    currentUser,
+    history,
+    historyIndex,
+    undo,
+    rollbackToHistory,
   } = useScheduleData()
 
   const [modalVisible, setModalVisible] = useState(false)
@@ -51,6 +58,9 @@ const ScheduleEditPage: React.FC = () => {
 
   // Excel 导入弹窗
   const [importVisible, setImportVisible] = useState(false)
+
+  // 历史版本弹窗
+  const [historyVisible, setHistoryVisible] = useState(false)
 
   // 日历事件处理
   const handleEventClick = useCallback(
@@ -91,7 +101,6 @@ const ScheduleEditPage: React.FC = () => {
         if (editingCourse) {
           success = updateCourse(editingCourse.id, values)
         } else {
-          // 新增时自动关联当前选中的班级和学生（如果有）
           success = addCourse({
             ...values,
             classId: selectedClass || undefined,
@@ -164,6 +173,20 @@ const ScheduleEditPage: React.FC = () => {
     return `课程表 - ${parts.join(' - ') || '全部'}`
   }
 
+  // 角色显示文本
+  const getRoleText = () => {
+    switch (currentUser.role) {
+      case 'admin':
+        return '管理员'
+      case 'teacher':
+        return '教师'
+      case 'student':
+        return '学生'
+      default:
+        return '未知'
+    }
+  }
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -187,6 +210,21 @@ const ScheduleEditPage: React.FC = () => {
           onStudentChange={handleStudentChange}
           onTeacherChange={handleTeacherChange}
         />
+        {/* 新增：角色信息 + 历史版本操作区 */}
+        <div className={styles.roleHistoryBar}>
+          <div className={styles.userInfo}>
+            当前角色：<span className={styles.roleTag}>{getRoleText()}</span>
+          </div>
+          <Space>
+            <Button onClick={undo} disabled={historyIndex <= 0}>
+              撤销
+            </Button>
+            <Button onClick={() => setHistoryVisible(true)} disabled={history.length <= 1}>
+              历史版本
+            </Button>
+          </Space>
+        </div>
+
         <div className={styles.batchActions}>
           <Space wrap>
             <Button onClick={openBatchShiftForClass} disabled={!selectedClass}>
@@ -239,6 +277,14 @@ const ScheduleEditPage: React.FC = () => {
           const result = await importFromExcel(file)
           return result
         }}
+      />
+
+      <HistoryModal
+        visible={historyVisible}
+        onCancel={() => setHistoryVisible(false)}
+        history={history}
+        currentIndex={historyIndex}
+        onRollback={rollbackToHistory}
       />
 
       <div className={styles.footer}>

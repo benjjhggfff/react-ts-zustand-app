@@ -63,6 +63,23 @@ const CourseModal: React.FC<Props> = ({
       destroyOnClose
       className={styles.courseModal}
     >
+      <Form.Item
+        name="type"
+        label="课程类型"
+        rules={[{ required: true, message: '请选择课程类型' }]}
+      >
+        <Select placeholder="请选择">
+          <Select.Option value="required">必修</Select.Option>
+          <Select.Option value="elective">选修</Select.Option>
+          <Select.Option value="public">公共课</Select.Option>
+          <Select.Option value="major">专业课</Select.Option>
+        </Select>
+      </Form.Item>
+      <Form.Item name="tags" label="标签">
+        <Select mode="tags" placeholder="输入标签后回车" style={{ width: '100%' }}>
+          {/* 可以预设一些常用标签 */}
+        </Select>
+      </Form.Item>
       <Form form={form} layout="vertical">
         <Form.Item
           name="title"

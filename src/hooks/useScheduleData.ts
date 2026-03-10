@@ -3,7 +3,7 @@ import { message, notification } from 'antd'
 import { useLocation } from 'react-router-dom'
 import dayjs from 'dayjs'
 import * as XLSX from 'xlsx'
-import type { Major, Teacher, Course } from '../constants/course'
+import type { Major, Teacher, Course, User } from '../constants/course'
 
 const generateRandomColor = () => {
   const letters = '0123456789ABCDEF'
@@ -14,16 +14,68 @@ const generateRandomColor = () => {
   return color
 }
 
+// 模拟当前用户（通过修改此对象切换角色）
+const MOCK_CURRENT_USER: User = {
+  id: '1',
+  name: '管理员',
+  role: 'admin', // 可选 'admin', 'teacher', 'student'
+  // 如果是教师，可设置 teacherId: '1'
+  // 如果是学生，可设置 studentId: '1', classId: '1-1'
+}
+
 export const useScheduleData = () => {
   const location = useLocation()
   const [majors, setMajors] = useState<Major[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [courses, setCourses] = useState<Course[]>([])
+  // 当前用户（模拟）
+  const [currentUser] = useState<User>(MOCK_CURRENT_USER)
+
+  // 筛选状态
   const [selectedMajor, setSelectedMajor] = useState<string>('')
   const [selectedClass, setSelectedClass] = useState<string>('')
   const [selectedStudent, setSelectedStudent] = useState<string>('')
-  const [selectedTeacher, setSelectedTeacher] = useState<string>('') // 新增教师筛选
+  const [selectedTeacher, setSelectedTeacher] = useState<string>('')
   const [loading, setLoading] = useState(false)
+
+  // 历史版本栈
+  const [history, setHistory] = useState<Course[][]>([])
+  const [historyIndex, setHistoryIndex] = useState<number>(-1)
+
+  // 保存当前快照到历史（每次修改前调用）
+  const pushHistory = useCallback(() => {
+    setHistory(prev => {
+      // 保留当前索引之前的版本，丢弃之后的（如果有）
+      const newHistory = prev.slice(0, historyIndex + 1)
+      // 深拷贝当前课程列表
+      newHistory.push(JSON.parse(JSON.stringify(courses)))
+      return newHistory
+    })
+    setHistoryIndex(prev => prev + 1)
+  }, [courses, historyIndex])
+
+  // 撤销最后一次操作
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      setCourses(history[historyIndex - 1])
+      setHistoryIndex(historyIndex - 1)
+      message.success('撤销成功')
+    } else {
+      message.warning('没有可撤销的操作')
+    }
+  }, [history, historyIndex])
+
+  // 回滚到指定历史版本
+  const rollbackToHistory = useCallback(
+    (index: number) => {
+      if (index >= 0 && index < history.length) {
+        setCourses(history[index])
+        setHistoryIndex(index)
+        message.success('已恢复到所选版本')
+      }
+    },
+    [history]
+  )
 
   // 模拟数据加载
   useEffect(() => {
@@ -88,6 +140,8 @@ export const useScheduleData = () => {
           color: generateRandomColor(),
           status: 'active',
           classId: '1-1',
+          type: 'required',
+          tags: ['专业课', '第一学期'],
         },
         {
           id: '2',
@@ -100,6 +154,8 @@ export const useScheduleData = () => {
           color: generateRandomColor(),
           status: 'active',
           classId: '1-1',
+          type: 'required',
+          tags: ['公共课'],
         },
         {
           id: '3',
@@ -112,6 +168,8 @@ export const useScheduleData = () => {
           color: generateRandomColor(),
           status: 'active',
           classId: '1-2',
+          type: 'major',
+          tags: ['专业课', '核心'],
         },
         {
           id: '4',
@@ -124,6 +182,8 @@ export const useScheduleData = () => {
           color: generateRandomColor(),
           status: 'active',
           classId: '2-1',
+          type: 'major',
+          tags: ['专业课'],
         },
         {
           id: '5',
@@ -136,12 +196,17 @@ export const useScheduleData = () => {
           color: generateRandomColor(),
           status: 'active',
           classId: '2-1',
+          type: 'elective',
+          tags: ['选修课'],
         },
       ]
 
       setMajors(mockMajors)
       setTeachers(mockTeachers)
       setCourses(mockCourses)
+      // 初始化历史栈，将初始状态作为第一个版本
+      setHistory([JSON.parse(JSON.stringify(mockCourses))])
+      setHistoryIndex(0)
       setLoading(false)
     }, 500)
   }, [])
@@ -208,6 +273,29 @@ export const useScheduleData = () => {
     [courses]
   )
 
+  // 根据用户角色过滤课程
+  const filteredCoursesByRole = useMemo(() => {
+    if (currentUser.role === 'admin') {
+      return courses
+    } else if (currentUser.role === 'teacher') {
+      return courses.filter(c => c.teacherId === currentUser.teacherId)
+    } else if (currentUser.role === 'student') {
+      // 学生看自己班级的课程 + 公共课
+      return courses.filter(c => c.classId === currentUser.classId || c.type === 'public')
+    }
+    return courses
+  }, [courses, currentUser])
+
+  // 根据筛选条件进一步过滤（班级、教师等）
+  const filteredCourses = useMemo(() => {
+    return filteredCoursesByRole.filter(c => {
+      if (selectedClass && c.classId !== selectedClass) return false
+      if (selectedTeacher && c.teacherId !== selectedTeacher) return false
+      // 学生维度筛选暂时忽略，可后续扩展
+      return true
+    })
+  }, [filteredCoursesByRole, selectedClass, selectedTeacher])
+
   // ==================== 单课程操作 ====================
   const addCourse = useCallback(
     (values: {
@@ -218,7 +306,12 @@ export const useScheduleData = () => {
       start: string
       end: string
       classId?: string
+      type: 'required' | 'elective' | 'public' | 'major'
+      tags: string[]
     }) => {
+      // 保存历史
+      pushHistory()
+
       // 检查过去日期
       if (isPastDate(values.start) || isPastDate(values.end)) {
         message.error('不能安排过去的课程')
@@ -246,13 +339,16 @@ export const useScheduleData = () => {
       })
       return true
     },
-    [checkConflicts, isPastDate]
+    [checkConflicts, isPastDate, pushHistory]
   )
 
   const updateCourse = useCallback(
     (id: string, updates: Partial<Course>) => {
       const course = courses.find(c => c.id === id)
       if (!course) return false
+
+      // 保存历史
+      pushHistory()
 
       const newStart = updates.start ?? course.start
       const newEnd = updates.end ?? course.end
@@ -280,13 +376,18 @@ export const useScheduleData = () => {
       })
       return true
     },
-    [courses, checkConflicts, isPastDate]
+    [courses, checkConflicts, isPastDate, pushHistory]
   )
 
-  const deleteCourse = useCallback((id: string) => {
-    setCourses(prev => prev.filter(c => c.id !== id))
-    message.success('课程已删除')
-  }, [])
+  const deleteCourse = useCallback(
+    (id: string) => {
+      // 保存历史
+      pushHistory()
+      setCourses(prev => prev.filter(c => c.id !== id))
+      message.success('课程已删除')
+    },
+    [pushHistory]
+  )
 
   // ==================== 批量操作 ====================
   // 批量偏移（按班级）
@@ -297,6 +398,9 @@ export const useScheduleData = () => {
         return { success: false, message: '该班级暂无课程' }
       }
 
+      // 保存历史
+      pushHistory()
+
       const today = dayjs().startOf('day')
       const updatedCourses: Course[] = []
       const conflicts: string[] = []
@@ -305,26 +409,22 @@ export const useScheduleData = () => {
         const newStart = dayjs(course.start).add(days, 'day')
         const newEnd = dayjs(course.end).add(days, 'day')
 
-        // 跳过周末：如果新日期是周六或周日，调整到下一个周一
+        // 跳过周末
         let adjustedStart = newStart
         let adjustedEnd = newEnd
         if (adjustedStart.day() === 6) {
-          // 周六
           adjustedStart = adjustedStart.add(2, 'day')
           adjustedEnd = adjustedEnd.add(2, 'day')
         } else if (adjustedStart.day() === 0) {
-          // 周日
           adjustedStart = adjustedStart.add(1, 'day')
           adjustedEnd = adjustedEnd.add(1, 'day')
         }
 
-        // 检查是否过去
         if (adjustedStart.isBefore(today)) {
           conflicts.push(`${course.title} 不能移到过去`)
           return
         }
 
-        // 冲突检测
         const conflict = checkConflicts(
           adjustedStart.toISOString(),
           adjustedEnd.toISOString(),
@@ -349,7 +449,6 @@ export const useScheduleData = () => {
         return { success: false, message: `部分课程无法移动：${conflicts.join('；')}` }
       }
 
-      // 批量更新
       setCourses(prev =>
         prev.map(c => {
           const updated = updatedCourses.find(uc => uc.id === c.id)
@@ -360,7 +459,7 @@ export const useScheduleData = () => {
       notification.success({ message: `成功将 ${updatedCourses.length} 门课程后移 ${days} 天` })
       return { success: true, message: '' }
     },
-    [courses, checkConflicts]
+    [courses, checkConflicts, pushHistory]
   )
 
   // 批量偏移（按教师）
@@ -371,6 +470,8 @@ export const useScheduleData = () => {
         return { success: false, message: '该教师暂无课程' }
       }
 
+      pushHistory()
+
       const today = dayjs().startOf('day')
       const updatedCourses: Course[] = []
       const conflicts: string[] = []
@@ -379,7 +480,6 @@ export const useScheduleData = () => {
         const newStart = dayjs(course.start).add(days, 'day')
         const newEnd = dayjs(course.end).add(days, 'day')
 
-        // 跳过周末（同班级逻辑）
         let adjustedStart = newStart
         let adjustedEnd = newEnd
         if (adjustedStart.day() === 6) {
@@ -429,7 +529,7 @@ export const useScheduleData = () => {
       notification.success({ message: `成功将 ${updatedCourses.length} 门课程后移 ${days} 天` })
       return { success: true, message: '' }
     },
-    [courses, checkConflicts]
+    [courses, checkConflicts, pushHistory]
   )
 
   // Excel 导入
@@ -444,15 +544,13 @@ export const useScheduleData = () => {
       const errors: string[] = []
 
       rows.forEach((row: any, index) => {
-        // 期望列名：课程名称、教师、教师ID、教室、开始时间、结束时间、班级ID
-        const { 课程名称, 教师, 教师ID, 教室, 开始时间, 结束时间, 班级ID } = row
+        const { 课程名称, 教师, 教师ID, 教室, 开始时间, 结束时间, 班级ID, 课程类型, 标签 } = row
 
-        if (!课程名称 || !教师 || !教室 || !开始时间 || !结束时间 || !班级ID) {
+        if (!课程名称 || !教师 || !教室 || !开始时间 || !结束时间 || !班级ID || !课程类型) {
           errors.push(`第 ${index + 2} 行数据不完整`)
           return
         }
 
-        // 解析 Excel 日期（可能为数字或字符串）
         let start: string, end: string
         if (typeof 开始时间 === 'number') {
           start = XLSX.SSF.format('yyyy-mm-dd hh:mm:ss', 开始时间)
@@ -465,13 +563,11 @@ export const useScheduleData = () => {
           end = dayjs(结束时间).format('YYYY-MM-DDTHH:mm:ss')
         }
 
-        // 检查过去日期
         if (isPastDate(start) || isPastDate(end)) {
           errors.push(`第 ${index + 2} 行：不能安排过去的课程`)
           return
         }
 
-        // 冲突检测
         const conflict = checkConflicts(start, end, 教师, 教室)
         if (conflict.hasConflict) {
           errors.push(`第 ${index + 2} 行：${conflict.message}`)
@@ -486,6 +582,8 @@ export const useScheduleData = () => {
           start,
           end,
           classId: 班级ID,
+          type: 课程类型, // required,elective,public,major
+          tags: 标签 ? 标签.split(',').map((t: string) => t.trim()) : [],
         })
       })
 
@@ -493,15 +591,27 @@ export const useScheduleData = () => {
         return { success: false, message: `导入失败：${errors.join('；')}` }
       }
 
-      // 批量添加（逐个添加，避免重复提示）
+      // 保存历史
+      pushHistory()
+
+      // 批量添加
       newCourses.forEach(course => {
         const c: any = { ...course }
-        addCourse(c) // 注意 addCourse 有冲突检测，但前面已检测过，这里可跳过，但为了代码复用，保留
+        // 直接 setCourses 而不是调用 addCourse，避免多次历史保存
+        setCourses(prev => [
+          ...prev,
+          {
+            ...c,
+            id: Date.now() + Math.random().toString(),
+            color: generateRandomColor(),
+            status: 'pending',
+          },
+        ])
       })
 
       return { success: true, message: `成功导入 ${newCourses.length} 门课程` }
     },
-    [addCourse, checkConflicts, isPastDate]
+    [checkConflicts, isPastDate, pushHistory]
   )
 
   // Excel 导出
@@ -515,6 +625,8 @@ export const useScheduleData = () => {
         开始时间: dayjs(c.start).format('YYYY-MM-DD HH:mm'),
         结束时间: dayjs(c.end).format('YYYY-MM-DD HH:mm'),
         班级ID: c.classId,
+        课程类型: c.type,
+        标签: c.tags.join(','),
       }))
       const ws = XLSX.utils.json_to_sheet(data)
       const wb = XLSX.utils.book_new()
@@ -542,22 +654,23 @@ export const useScheduleData = () => {
     [teachers, selectedTeacher]
   )
 
-  // 过滤后的课程（用于显示）
-  const filteredCourses = useMemo(() => {
-    return courses.filter(c => {
-      if (selectedClass && c.classId !== selectedClass) return false
-      if (selectedTeacher && c.teacherId !== selectedTeacher) return false
-      // 学生筛选比较复杂（需要课程关联学生），暂不实现
-      return true
-    })
-  }, [courses, selectedClass, selectedTeacher])
+  // 课程类型选项（用于表单）
+  const courseTypeOptions = [
+    { label: '必修', value: 'required' },
+    { label: '选修', value: 'elective' },
+    { label: '公共课', value: 'public' },
+    { label: '专业课', value: 'major' },
+  ]
 
   return {
+    // 数据
     majors,
     teachers,
     courses,
     filteredCourses,
     loading,
+    currentUser,
+    // 筛选值
     selectedMajor,
     selectedClass,
     selectedStudent,
@@ -566,6 +679,7 @@ export const useScheduleData = () => {
     currentClass,
     currentStudent,
     currentTeacher,
+    // 筛选变更
     setSelectedMajor,
     setSelectedClass,
     setSelectedStudent,
@@ -585,12 +699,21 @@ export const useScheduleData = () => {
     handleTeacherChange: (value: string) => {
       setSelectedTeacher(value)
     },
+    // 课程操作
     addCourse,
     updateCourse,
     deleteCourse,
+    // 批量操作
     batchShiftByClass,
     batchShiftByTeacher,
     importFromExcel,
     exportToExcel,
+    // 历史版本
+    history,
+    historyIndex,
+    undo,
+    rollbackToHistory,
+    // 课程类型选项
+    courseTypeOptions,
   }
 }

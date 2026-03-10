@@ -31,13 +31,31 @@ const ScheduleCalendar: React.FC<Props> = ({ courses, onEventClick, onEventDrop,
 
   // 自定义事件内容渲染
   const renderEventContent = (info: any) => {
-    const { teacher, location } = info.event.extendedProps
+    const { teacher, location, type, tags } = info.event.extendedProps
+    const typeMap: Record<string, string> = {
+      required: '必修',
+      elective: '选修',
+      public: '公共',
+      major: '专业',
+    }
     return (
       <div className={styles.calendarEvent}>
-        <div className={styles.eventTitle}>{info.event.title}</div>
+        <div className={styles.eventTitle}>
+          {info.event.title}
+          <span className={styles.eventType}>({typeMap[type] || type})</span>
+        </div>
         <div className={styles.eventMeta}>
           {teacher} | {location}
         </div>
+        {tags && tags.length > 0 && (
+          <div className={styles.eventTags}>
+            {tags.map((tag: string) => (
+              <span key={tag} className={styles.eventTag}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     )
   }

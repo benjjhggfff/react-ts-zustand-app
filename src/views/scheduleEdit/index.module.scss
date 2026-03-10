@@ -100,3 +100,24 @@
     text-overflow: ellipsis;
   }
 }
+.eventType {
+  margin-left: 4px;
+  font-size: 10px;
+  color: #fff;
+  background: rgba(0,0,0,0.2);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+.eventTags {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.eventTag {
+  background: rgba(255,255,255,0.3);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 9px;
+  color: #fff;
+}

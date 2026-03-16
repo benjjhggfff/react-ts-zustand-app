@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>更新菜单列表</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px 0;
+      cursor: pointer;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>更新菜单列表</h1>
+  <button onclick="checkMenuList()">检查当前菜单列表</button>
+  <button onclick="updateMenuList()">更新菜单列表</button>
+  <button onclick="clearMenuList()">清空菜单列表</button>
+  <div id="result"></div>
+
+  <script>
+    function checkMenuList() {
+      const currentMenuList = JSON.parse(localStorage.getItem('menuList') || '[]');
+      document.getElementById('result').innerHTML = '<h2>当前菜单列表：</h2><pre>' + JSON.stringify(currentMenuList, null, 2) + '</pre>';
+    }
+
+    function updateMenuList() {
+      // 定义新的菜单列表
+      const newMenuList = [
+        {
+          "path": "/resources",
+          "title": "资源管理",
+          "icon": "AppstoreAddOutlined",
+          "children": [
+            {
+              "path": "/resources/classRoom",
+              "title": "教室管理",
+              "key": "classroom:manage"
+            },
+            {
+              "path": "/resources/teacher",
+              "title": "教师管理",
+              "key": "teacher:manage"
+            },
+            {
+              "path": "/resources/student",
+              "title": "学生管理",
+              "key": "student:manage"
+            },
+            {
+              "path": "/resources/course",
+              "title": "课程管理",
+              "key": "course:manage"
+            }
+          ]
+        },
+        {
+          "path": "/schedule",
+          "title": "排课管理",
+          "icon": "BarChartOutlined",
+          "children": [
+            {
+              "path": "/schedule/edit",
+              "title": "手动排课",
+              "key": "schedule:edit"
+            },
+            {
+              "path": "/schedule/statistics",
+              "title": "排课统计",
+              "key": "schedule:statistics"
+            }
+          ]
+        },
+        {
+          "path": "/user",
+          "title": "用户管理",
+          "icon": "UserAddOutlined",
+          "children": [
+            {
+              "path": "/user/userInfo",
+              "title": "个人信息",
+              "key": "user:info"
+            },
+            {
+              "path": "/user/list",
+              "title": "用户列表",
+              "key": "user:list"
+            },
+            {
+              "path": "/user/role",
+              "title": "角色管理",
+              "key": "user:role"
+            }
+          ]
+        }
+      ];
+
+      localStorage.setItem('menuList', JSON.stringify(newMenuList));
+      document.getElementById('result').innerHTML = '<h2>更新后的菜单列表：</h2><pre>' + JSON.stringify(newMenuList, null, 2) + '</pre>';
+    }
+
+    function clearMenuList() {
+      localStorage.removeItem('menuList');
+      document.getElementById('result').innerHTML = '<h2>菜单列表已清空</h2>';
+    }
+  </script>
+</body>
+</html>

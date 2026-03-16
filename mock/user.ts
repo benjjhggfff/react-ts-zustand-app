@@ -73,7 +73,7 @@ const mockUserList: Record<'admin' | 'normal', UserInfoResponse> = {
           title: '数据统计',
           icon: 'BarChartOutlined',
           children: [
-            { path: '/stat/schedule', title: '排课统计', key: 'P_STAT_SCHEDULE' },
+            { path: '/stat/statistics', title: '排课统计', key: 'P_STAT_SCHEDULE' },
             { path: '/stat/classroom', title: '教室使用统计', key: 'P_STAT_CLASSROOM' },
             { path: '/stat/teacher', title: '教师使用统计', key: 'P_STAT_TEACHER' },
             { path: '/stat/class', title: '班级使用统计', key: 'P_STAT_CLASS' },

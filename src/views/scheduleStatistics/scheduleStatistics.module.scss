@@ -1,0 +1,48 @@
+.scheduleStatistics {
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actionBar {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .searchBar,
+  .filterBar,
+  .actionBar {
+    width: 100%;
+  }
+  
+  .filterBar {
+    justify-content: space-between;
+  }
+}

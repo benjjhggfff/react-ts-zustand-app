@@ -11,6 +11,7 @@ const lazyLoad = (path: string) => {
     '/resources/student': () => import('../views/studentPage/index'),
     '/resources/course': () => import('../views/course/index'),
     '/schedule/edit': () => import('../views/scheduleEdit/index'),
+    '/stat/statistics': () => import('../views/scheduleStatistics/index'),
     '/user/userInfo': () => import('../views/userPage/index'),
     '/user/list': () => import('../views/userList/index'),
     '/user/role': () => import('../views/userManagement/index'),

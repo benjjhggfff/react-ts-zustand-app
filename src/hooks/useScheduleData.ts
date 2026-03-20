@@ -713,6 +713,7 @@ export const useScheduleData = () => {
     historyIndex,
     undo,
     rollbackToHistory,
+    pushHistory,
     // 课程类型选项
     courseTypeOptions,
   }

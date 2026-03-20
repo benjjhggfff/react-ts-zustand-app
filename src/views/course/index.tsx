@@ -34,6 +34,7 @@ import {
   ApartmentOutlined,
   NumberOutlined,
   FieldTimeOutlined,
+  PieChartOutlined,
 } from '@ant-design/icons'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 import styles from './index.module.scss'
@@ -281,45 +282,132 @@ export default function CoursePage() {
 
   // 表格列定义
   const columns = [
-    { title: '序号', dataIndex: 'id', key: 'id', width: 60 },
+    {
+      title: '序号',
+      dataIndex: 'id',
+      key: 'id',
+      width: 60,
+      render: (text: number) => <span style={{ fontWeight: 500, color: '#666' }}>{text}</span>,
+    },
     {
       title: '课程编号/名称',
       key: 'courseInfo',
-      width: 200,
+      width: 220,
       render: (_: any, record: Course) => (
-        <div>
-          <div className={styles['course-name']}>{record.courseName}</div>
-          <div className={styles['course-code']}>{record.courseNumber}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div
+            className={styles['course-name']}
+            style={{
+              fontWeight: 500,
+              color: '#1890ff',
+              fontSize: 15,
+              transition: 'color 0.3s ease',
+            }}
+          >
+            {record.courseName}
+          </div>
+          <div
+            className={styles['course-code']}
+            style={{
+              fontSize: 12,
+              color: '#999',
+              fontFamily: 'monospace',
+              letterSpacing: 0.5,
+            }}
+          >
+            {record.courseNumber}
+          </div>
         </div>
       ),
     },
     {
       title: '学院/分类',
       key: 'department',
-      width: 180,
+      width: 190,
       render: (_: any, record: Course) => (
-        <div>
-          <div>{record.department}</div>
-          <div className={styles['course-category']}>{record.courseCategories}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ fontWeight: 500, color: '#333' }}>{record.department}</div>
+          <div
+            className={styles['course-category']}
+            style={{
+              fontSize: 12,
+              color: '#666',
+              backgroundColor: '#f5f5f5',
+              padding: '2px 8px',
+              borderRadius: 10,
+              alignSelf: 'flex-start',
+            }}
+          >
+            {record.courseCategories}
+          </div>
         </div>
       ),
     },
-    { title: '学分', dataIndex: 'credits', key: 'credits', width: 70 },
+    {
+      title: '学分',
+      dataIndex: 'credits',
+      key: 'credits',
+      width: 80,
+      render: (text: string) => (
+        <span
+          style={{
+            fontWeight: 500,
+            color: '#fa8c16',
+            fontSize: 14,
+          }}
+        >
+          {text}
+        </span>
+      ),
+    },
     {
       title: '理论/实验',
       key: 'hours',
-      width: 140,
-      render: (_: any, record: Course) =>
-        `理论:${record.theoreticalHours} 实验:${record.experimentalHours}`,
+      width: 150,
+      render: (_: any, record: Course) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ fontSize: 13, color: '#333' }}>理论: {record.theoreticalHours} 学时</div>
+          <div style={{ fontSize: 13, color: '#1890ff' }}>
+            实验: {record.experimentalHours} 学时
+          </div>
+        </div>
+      ),
     },
-    { title: '课程类型', dataIndex: 'courseType', key: 'courseType', width: 140 },
+    {
+      title: '课程类型',
+      dataIndex: 'courseType',
+      key: 'courseType',
+      width: 140,
+      render: (text: string) => (
+        <span
+          style={{
+            fontSize: 13,
+            color: '#666',
+            backgroundColor: '#f0f9ff',
+            padding: '4px 10px',
+            borderRadius: 12,
+            display: 'inline-block',
+          }}
+        >
+          {text}
+        </span>
+      ),
+    },
     {
       title: '状态',
       dataIndex: 'enabledStatus',
       key: 'enabledStatus',
       width: 90,
       render: (text: string) => (
-        <Tag color={text === '是' ? 'success' : 'warning'}>
+        <Tag
+          color={text === '是' ? '#52c41a' : '#faad14'}
+          style={{
+            borderRadius: 12,
+            padding: '4px 12px',
+            fontSize: 12,
+            fontWeight: 500,
+          }}
+        >
           {text === '是' ? '已启用' : '未启用'}
         </Tag>
       ),
@@ -327,10 +415,29 @@ export default function CoursePage() {
     {
       title: '操作',
       key: 'action',
-      width: 80,
+      width: 100,
       render: (_: any, record: Course) => (
-        <Dropdown overlay={renderActionMenu(record)} trigger={['click']}>
-          <Button icon={<EllipsisOutlined />} size="small" />
+        <Dropdown overlay={renderActionMenu(record)} trigger={['click']} placement="bottomRight">
+          <Button
+            icon={<EllipsisOutlined />}
+            size="small"
+            style={{
+              borderRadius: 20,
+              width: 32,
+              height: 32,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.3s ease',
+              border: '1px solid #e8e8e8',
+              backgroundColor: '#fff',
+            }}
+            hoverStyle={{
+              borderColor: '#1890ff',
+              backgroundColor: '#f0f9ff',
+              transform: 'scale(1.05)',
+            }}
+          />
         </Dropdown>
       ),
     },
@@ -340,47 +447,101 @@ export default function CoursePage() {
     <div className={styles['course-management']}>
       {/* 搜索筛选卡 */}
       <Card className={styles['search-card']} bordered={false}>
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={8}>
-            <div className={styles['filter-item']}>
-              <span className={styles['filter-label']}>学分范围</span>
-              <Slider
-                range
-                min={0}
-                max={10}
-                step={0.5}
-                value={[minCredits, maxCredits]}
-                onChange={([min, max]) => {
-                  setMinCredits(min)
-                  setMaxCredits(max)
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 20,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div className={styles['filter-item']}>
+                <span className={styles['filter-label']}>学分范围</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Slider
+                    range
+                    min={0}
+                    max={10}
+                    step={0.5}
+                    value={[minCredits, maxCredits]}
+                    onChange={([min, max]) => {
+                      setMinCredits(min)
+                      setMaxCredits(max)
+                    }}
+                    style={{ width: 200 }}
+                    tooltip={{
+                      formatter: (value: number) => `${value} 学分`,
+                      placement: 'top',
+                    }}
+                  />
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: '#666',
+                      minWidth: 100,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {minCredits} - {maxCredits} 学分
+                  </div>
+                </div>
+              </div>
+              <div className={styles['filter-item']}>
+                <span className={styles['filter-label']}>排序方式</span>
+                <Select
+                  value={sortBy}
+                  onChange={setSortBy}
+                  style={{ width: 160 }}
+                  optionFilterProp="label"
+                  filterOption={(input, option) =>
+                    (option?.children as unknown as string)
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                >
+                  <Option value="courseNumber">课程编号</Option>
+                  <Option value="credits">学分</Option>
+                  <Option value="theoreticalHours">理论学时</Option>
+                </Select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={handleSearch}
+                style={{
+                  borderRadius: 8,
+                  padding: '6px 20px',
+                  fontWeight: 500,
                 }}
-                style={{ width: 200, marginLeft: 12 }}
-              />
+              >
+                搜索
+              </Button>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleReset}
+                style={{
+                  borderRadius: 8,
+                  padding: '6px 20px',
+                  fontWeight: 500,
+                }}
+              >
+                重置
+              </Button>
             </div>
-          </Col>
-          <Col xs={24} md={8}>
-            <div className={styles['filter-item']}>
-              <span className={styles['filter-label']}>排序方式</span>
-              <Select value={sortBy} onChange={setSortBy} style={{ width: 140 }}>
-                <Option value="courseNumber">课程编号</Option>
-                <Option value="credits">学分</Option>
-                <Option value="theoreticalHours">理论学时</Option>
-              </Select>
-            </div>
-          </Col>
-          <Col xs={24} md={8}>
-            <div className={styles['filter-item']} style={{ justifyContent: 'flex-end' }}>
-              <Space>
-                <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-                  搜索
-                </Button>
-                <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                  重置
-                </Button>
-              </Space>
-            </div>
-          </Col>
-        </Row>
+          </div>
+        </div>
       </Card>
 
       {/* 统计卡片 */}
@@ -395,7 +556,10 @@ export default function CoursePage() {
               value={statisticsData.totalCourses}
               valueStyle={{ fontSize: 28, fontWeight: 600 }}
               suffix={
-                <span className={statisticsData.monthlyIncrease >= 0 ? 'trend-up' : 'trend-down'}>
+                <span
+                  className={statisticsData.monthlyIncrease >= 0 ? 'trend-up' : 'trend-down'}
+                  style={{ fontSize: 12, marginLeft: 4 }}
+                >
                   {statisticsData.monthlyIncrease > 0 ? '+' : ''}
                   {statisticsData.monthlyIncrease}% 相比上月
                 </span>
@@ -417,6 +581,7 @@ export default function CoursePage() {
                   className={
                     statisticsData.professionalCoursesIncrease >= 0 ? 'trend-up' : 'trend-down'
                   }
+                  style={{ fontSize: 12, marginLeft: 4 }}
                 >
                   +{statisticsData.professionalCoursesIncrease}% 相比上月
                 </span>
@@ -434,7 +599,10 @@ export default function CoursePage() {
               value={statisticsData.totalCredits}
               valueStyle={{ fontSize: 28, fontWeight: 600 }}
               suffix={
-                <span className={statisticsData.creditsIncrease >= 0 ? 'trend-up' : 'trend-down'}>
+                <span
+                  className={statisticsData.creditsIncrease >= 0 ? 'trend-up' : 'trend-down'}
+                  style={{ fontSize: 12, marginLeft: 4 }}
+                >
                   +{statisticsData.creditsIncrease}% 相比上月
                 </span>
               }
@@ -455,6 +623,7 @@ export default function CoursePage() {
                   className={
                     statisticsData.theoreticalHoursIncrease >= 0 ? 'trend-up' : 'trend-down'
                   }
+                  style={{ fontSize: 12, marginLeft: 4 }}
                 >
                   {statisticsData.theoreticalHoursIncrease}% 相比上月
                 </span>
@@ -465,24 +634,81 @@ export default function CoursePage() {
       </Row>
 
       {/* 课程列表与图表 */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[20, 20]}>
         <Col xs={24} lg={18}>
           <Card
             className={styles['course-list-card']}
             bordered={false}
-            title={<span style={{ fontSize: 16, fontWeight: 500 }}>课程列表</span>}
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BookOutlined style={{ color: '#1890ff' }} />
+                <span style={{ fontSize: 18, fontWeight: 600, color: '#333' }}>课程列表</span>
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: '#999',
+                    backgroundColor: '#f5f5f5',
+                    padding: '2px 8px',
+                    borderRadius: 10,
+                  }}
+                >
+                  共 {courses.length} 门课程
+                </span>
+              </div>
+            }
             extra={
-              <Space>
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCourse}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleAddCourse}
+                  style={{
+                    borderRadius: 8,
+                    padding: '6px 18px',
+                    fontWeight: 500,
+                    backgroundColor: '#1890ff',
+                    borderColor: '#1890ff',
+                    transition: 'all 0.3s ease',
+                  }}
+                  hoverStyle={{
+                    backgroundColor: '#40a9ff',
+                    borderColor: '#40a9ff',
+                    transform: 'translateY(-1px)',
+                  }}
+                >
                   添加课程
                 </Button>
-                <Button icon={<DownloadOutlined />} onClick={handleExportData}>
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={handleExportData}
+                  style={{
+                    borderRadius: 8,
+                    padding: '6px 16px',
+                    fontWeight: 500,
+                    transition: 'all 0.3s ease',
+                  }}
+                  hoverStyle={{
+                    transform: 'translateY(-1px)',
+                  }}
+                >
                   导出数据
                 </Button>
-                <Button icon={<UploadOutlined />} onClick={handleImportData}>
+                <Button
+                  icon={<UploadOutlined />}
+                  onClick={handleImportData}
+                  style={{
+                    borderRadius: 8,
+                    padding: '6px 16px',
+                    fontWeight: 500,
+                    transition: 'all 0.3s ease',
+                  }}
+                  hoverStyle={{
+                    transform: 'translateY(-1px)',
+                  }}
+                >
                   导入数据
                 </Button>
-              </Space>
+              </div>
             }
           >
             <Table
@@ -494,8 +720,17 @@ export default function CoursePage() {
                 showSizeChanger: true,
                 pageSizeOptions: ['10', '20', '50'],
                 showTotal: total => `共 ${total} 门课程`,
+                showQuickJumper: true,
+                style: {
+                  marginTop: 20,
+                  borderTop: '1px solid #f0f0f0',
+                  paddingTop: 20,
+                },
               }}
               className={styles['course-table']}
+              rowClassName={(record, index) => (index % 2 === 0 ? 'even-row' : 'odd-row')}
+              loading={false}
+              scroll={{ x: 1000 }}
             />
           </Card>
         </Col>
@@ -503,15 +738,23 @@ export default function CoursePage() {
         <Col xs={24} lg={6}>
           <Card className={styles['chart-card']} bordered={false}>
             <div className={styles['chart-header']}>
-              <span style={{ fontSize: 16, fontWeight: 500 }}>课程分类分布</span>
-              <Tabs activeKey={timeRange} onChange={setTimeRange} size="small">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <PieChartOutlined style={{ color: '#1890ff' }} />
+                <span style={{ fontSize: 16, fontWeight: 600, color: '#333' }}>课程分类分布</span>
+              </div>
+              <Tabs
+                activeKey={timeRange}
+                onChange={setTimeRange}
+                size="small"
+                style={{ minWidth: 150 }}
+              >
                 <TabPane tab="本月" key="month" />
                 <TabPane tab="本季度" key="quarter" />
                 <TabPane tab="本年度" key="year" />
               </Tabs>
             </div>
             <div className={styles['chart-container']}>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
                     data={getDistributionData(timeRange)}
@@ -520,16 +763,52 @@ export default function CoursePage() {
                     innerRadius={60}
                     outerRadius={90}
                     dataKey="value"
-                    label
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={{
+                      stroke: '#999',
+                      strokeWidth: 1,
+                      length: 10,
+                      length2: 10,
+                    }}
                   >
                     {getDistributionData(timeRange).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                        stroke="#fff"
+                        strokeWidth={2}
+                      />
                     ))}
                   </Pie>
-                  <Tooltip />
-                  <Legend verticalAlign="bottom" height={36} />
+                  <Tooltip
+                    formatter={(value, name) => [`${value} 门`, name]}
+                    contentStyle={{
+                      borderRadius: 8,
+                      border: '1px solid #e8e8e8',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    }}
+                  />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={40}
+                    formatter={value => (
+                      <span style={{ fontSize: 12, color: '#666' }}>{value}</span>
+                    )}
+                  />
                 </PieChart>
               </ResponsiveContainer>
+            </div>
+            <div
+              style={{
+                marginTop: 16,
+                paddingTop: 16,
+                borderTop: '1px solid #f0f0f0',
+                fontSize: 13,
+                color: '#999',
+                textAlign: 'center',
+              }}
+            >
+              数据更新时间：{new Date().toLocaleString()}
             </div>
           </Card>
         </Col>

@@ -51,10 +51,9 @@ const mockUserList: Record<'admin' | 'normal', UserInfoResponse> = {
           title: '排课操作',
           icon: 'AppstoreAddOutlined',
           children: [
-            { path: '/schedule/auto', title: '自动排课', key: 'P_SCHEDULE_AUTO' },
+            { path: '/schedule/edit', title: '智能排课', key: 'P_SCHEDULE_EDIT' },
             // { path: '/schedule/manual', title: '手动排课', key: 'P_SCHEDULE_MANUAL' },
             { path: '/schedule/preview', title: '预览课表', key: 'P_SCHEDULE_PREVIEW' },
-            { path: '/schedule/edit', title: '手动排课', key: 'P_SCHEDULE_EDIT' },
           ],
         },
         {
@@ -75,9 +74,6 @@ const mockUserList: Record<'admin' | 'normal', UserInfoResponse> = {
           children: [
             { path: '/stat/statistics', title: '排课统计', key: 'P_STAT_SCHEDULE' },
             { path: '/stat/classroom', title: '教室使用统计', key: 'P_STAT_CLASSROOM' },
-            { path: '/stat/teacher', title: '教师使用统计', key: 'P_STAT_TEACHER' },
-            { path: '/stat/class', title: '班级使用统计', key: 'P_STAT_CLASS' },
-            { path: '/stat/course', title: '课程使用统计', key: 'P_STAT_COURSE' },
           ],
         },
         {
@@ -87,7 +83,6 @@ const mockUserList: Record<'admin' | 'normal', UserInfoResponse> = {
           children: [
             { path: '/user/list', title: '用户列表', key: 'P_USER_LIST' },
             { path: '/user/role', title: '角色管理', key: 'P_USER_ROLE' },
-            { path: '/user/permission', title: '权限管理', key: 'P_USER_PERMISSION' },
             { path: '/user/userInfo', title: '我的账号', key: '' },
           ],
         },

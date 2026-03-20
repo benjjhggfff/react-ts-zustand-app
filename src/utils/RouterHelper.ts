@@ -7,6 +7,7 @@ const lazyLoad = (path: string) => {
   // 映射菜单路径到你的组件路径
   const pathMap: Record<string, () => Promise<{ default: React.ComponentType }>> = {
     '/resources/classRoom': () => import('../views/classRoom/index'),
+    '/stat/classroom': () => import('../views/classroomUsage/index'),
     '/resources/teacher': () => import('../views/teacher/index'),
     '/resources/student': () => import('../views/studentPage/index'),
     '/resources/course': () => import('../views/course/index'),

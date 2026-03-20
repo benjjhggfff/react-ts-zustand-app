@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { Card, Spin, Button, Space, message } from 'antd'
+import { Card, Spin, Button, Space, message, notification } from 'antd'
 import { useNavigate } from 'react-router-dom'
 import { useScheduleData } from '../../hooks/useScheduleData'
 import FilterBar from './components/FilterBar'
@@ -8,6 +8,8 @@ import CourseModal from './components/CourseModal'
 import BatchShiftModal from './components/BatchShiftModal'
 import ExcelImportModal from './components/ExcelImportModal'
 import HistoryModal from './components/HistoryModal' // 需要新建
+import AutoScheduleModal from './components/AutoScheduleModal'
+import { ScheduleOutlined } from '@ant-design/icons'
 import styles from './index.module.scss'
 
 const ScheduleEditPage: React.FC = () => {
@@ -15,6 +17,7 @@ const ScheduleEditPage: React.FC = () => {
   const {
     majors,
     teachers,
+    courses,
     filteredCourses,
     loading,
     selectedMajor,
@@ -42,6 +45,7 @@ const ScheduleEditPage: React.FC = () => {
     historyIndex,
     undo,
     rollbackToHistory,
+    pushHistory,
   } = useScheduleData()
 
   const [modalVisible, setModalVisible] = useState(false)
@@ -61,6 +65,9 @@ const ScheduleEditPage: React.FC = () => {
 
   // 历史版本弹窗
   const [historyVisible, setHistoryVisible] = useState(false)
+
+  // 自动排课弹窗
+  const [autoScheduleVisible, setAutoScheduleVisible] = useState(false)
 
   // 日历事件处理
   const handleEventClick = useCallback(
@@ -163,6 +170,39 @@ const ScheduleEditPage: React.FC = () => {
     exportToExcel(filteredCourses)
   }
 
+  // 自动排课处理
+  const handleAutoSchedule = useCallback(
+    (result: { success: boolean; message: string; courses?: any[] }) => {
+      if (result.success && result.courses) {
+        // 保存历史
+        pushHistory()
+        // 添加自动排课的课程
+        result.courses.forEach(course => {
+          addCourse({
+            title: course.title,
+            teacher: course.teacher,
+            teacherId: course.teacherId,
+            location: course.location,
+            start: course.start,
+            end: course.end,
+            classId: course.classId,
+            type: course.type,
+            tags: course.tags,
+          })
+        })
+        message.success(result.message)
+        notification.success({
+          message: '自动排课成功',
+          description: `成功为所选班级安排了 ${result.courses.length} 门课程`,
+        })
+      } else {
+        message.error(result.message)
+      }
+      setAutoScheduleVisible(false)
+    },
+    [pushHistory, addCourse]
+  )
+
   // 标题
   const getTitle = () => {
     const parts = []
@@ -198,6 +238,16 @@ const ScheduleEditPage: React.FC = () => {
   return (
     <div className={styles.container}>
       <Card className={styles.filterCard} bordered={false}>
+        <div className={styles.roleHistoryBar}>
+          <Space>
+            <Button onClick={undo} disabled={historyIndex <= 0}>
+              撤销
+            </Button>
+            <Button onClick={() => setHistoryVisible(true)} disabled={history.length <= 1}>
+              历史版本
+            </Button>
+          </Space>
+        </div>
         <FilterBar
           majors={majors}
           teachers={teachers}
@@ -210,23 +260,16 @@ const ScheduleEditPage: React.FC = () => {
           onStudentChange={handleStudentChange}
           onTeacherChange={handleTeacherChange}
         />
-        {/* 新增：角色信息 + 历史版本操作区 */}
-        <div className={styles.roleHistoryBar}>
-          <div className={styles.userInfo}>
-            当前角色：<span className={styles.roleTag}>{getRoleText()}</span>
-          </div>
-          <Space>
-            <Button onClick={undo} disabled={historyIndex <= 0}>
-              撤销
-            </Button>
-            <Button onClick={() => setHistoryVisible(true)} disabled={history.length <= 1}>
-              历史版本
-            </Button>
-          </Space>
-        </div>
 
         <div className={styles.batchActions}>
           <Space wrap>
+            <Button
+              type="primary"
+              icon={<ScheduleOutlined />}
+              onClick={() => setAutoScheduleVisible(true)}
+            >
+              自动排课
+            </Button>
             <Button onClick={openBatchShiftForClass} disabled={!selectedClass}>
               班级批量偏移
             </Button>
@@ -287,11 +330,14 @@ const ScheduleEditPage: React.FC = () => {
         onRollback={rollbackToHistory}
       />
 
-      <div className={styles.footer}>
-        <Button type="primary" onClick={() => navigate('/studentPage')}>
-          返回学生管理页面
-        </Button>
-      </div>
+      <AutoScheduleModal
+        visible={autoScheduleVisible}
+        onCancel={() => setAutoScheduleVisible(false)}
+        onConfirm={handleAutoSchedule}
+        majors={majors}
+        teachers={teachers}
+        existingCourses={courses}
+      />
     </div>
   )
 }

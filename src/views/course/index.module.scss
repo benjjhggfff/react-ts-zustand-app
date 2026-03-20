@@ -6,35 +6,68 @@
 
   // 全局卡片样式
   :global(.ant-card) {
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    transition: box-shadow 0.3s ease;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
+    border: none;
 
     &:hover {
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
     }
   }
 
   :global(.ant-btn) {
-    border-radius: 6px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    padding: 6px 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
   }
 
   // 搜索卡片
   .search-card {
-    margin-bottom: 20px;
+    margin-bottom: 24px;
     background-color: #fff;
-    padding: 16px 20px;
+    padding: 20px 24px;
+    border-radius: 16px;
 
     .filter-item {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
+      gap: 12px;
 
       .filter-label {
         font-weight: 500;
         color: #333;
         white-space: nowrap;
-        margin-right: 8px;
+        font-size: 14px;
+      }
+    }
+
+    :global(.ant-slider) {
+      width: 200px;
+
+      .ant-slider-track {
+        background-color: #1890ff;
+      }
+
+      .ant-slider-handle {
+        border-color: #1890ff;
+        width: 16px;
+        height: 16px;
+        margin-top: -6px;
+
+        &:hover {
+          border-color: #40a9ff;
+          box-shadow: 0 0 0 4px rgba(24, 144, 255, 0.1);
+        }
       }
     }
   }
@@ -43,16 +76,51 @@
   .stat-card {
     display: flex;
     align-items: center;
-    padding: 20px;
+    padding: 24px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 16px 0 0 16px;
+    }
+
+    &:nth-child(1)::before {
+      background-color: #1890ff;
+    }
+
+    &:nth-child(2)::before {
+      background-color: #fa8c16;
+    }
+
+    &:nth-child(3)::before {
+      background-color: #52c41a;
+    }
+
+    &:nth-child(4)::before {
+      background-color: #2f54eb;
+    }
 
     .stat-icon {
-      width: 60px;
-      height: 60px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 16px;
+      margin-right: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease;
+
+      &:hover {
+        transform: scale(1.05);
+      }
     }
 
     :global {
@@ -60,11 +128,26 @@
         color: #52c41a;
         font-size: 12px;
         margin-left: 4px;
+        font-weight: 500;
       }
       .trend-down {
         color: #f5222d;
         font-size: 12px;
         margin-left: 4px;
+        font-weight: 500;
+      }
+
+      .ant-statistic-title {
+        font-size: 14px;
+        color: #666;
+        font-weight: 400;
+        margin-bottom: 4px;
+      }
+
+      .ant-statistic-content {
+        font-size: 28px;
+        font-weight: 600;
+        color: #333;
       }
     }
   }
@@ -72,17 +155,26 @@
   // 课程列表卡片
   .course-list-card {
     background-color: #fff;
+    border-radius: 16px;
+
+    :global(.ant-card-head) {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 24px;
+    }
 
     .course-table {
-      margin-top: 16px;
+      margin-top: 0;
 
       .course-name {
         font-weight: 500;
         color: #1890ff;
+        font-size: 15px;
+        margin-bottom: 2px;
       }
       .course-code {
         font-size: 12px;
         color: #999;
+        font-family: monospace;
       }
       .course-category {
         font-size: 12px;
@@ -93,6 +185,29 @@
       :global(.ant-table-thead > tr > th) {
         background-color: #fafafa;
         font-weight: 500;
+        color: #333;
+        font-size: 14px;
+        border-bottom: 1px solid #f0f0f0;
+        padding: 16px;
+      }
+
+      :global(.ant-table-tbody > tr > td) {
+        padding: 16px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+      }
+
+      :global(.ant-table-tbody > tr:hover > td) {
+        background-color: #fafafa;
+      }
+
+      :global(.ant-table-row-selected > td) {
+        background-color: #e6f7ff !important;
+      }
+
+      :global(.ant-dropdown-menu) {
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
       }
     }
   }
@@ -101,41 +216,126 @@
   .chart-card {
     background-color: #fff;
     height: 100%;
+    border-radius: 16px;
 
     .chart-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       padding: 0 4px;
     }
 
     .chart-container {
-      height: 280px;
+      height: 300px;
       width: 100%;
+      padding: 10px;
+    }
+
+    :global(.ant-tabs-tab) {
+      font-size: 13px;
+      padding: 4px 12px;
+      margin: 0 4px;
+
+      &.ant-tabs-tab-active .ant-tabs-tab-btn {
+        color: #1890ff;
+        font-weight: 500;
+      }
+
+      &:hover {
+        color: #1890ff;
+      }
+    }
+
+    :global(.ant-tabs-ink-bar) {
+      background-color: #1890ff;
+      height: 2px;
     }
   }
 
   // 弹窗表单卡片分组
   .form-card {
-    margin-bottom: 16px;
-    border-radius: 8px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
 
     :global(.ant-card-head) {
-      min-height: 40px;
-      padding: 0 12px;
+      min-height: 44px;
+      padding: 0 16px;
       background-color: #fafafa;
       border-bottom: 1px solid #f0f0f0;
+      border-radius: 12px 12px 0 0;
+    }
+
+    :global(.ant-form-item) {
+      margin-bottom: 16px;
+    }
+
+    :global(.ant-input),
+    :global(.ant-select-selector),
+    :global(.ant-input-number) {
+      border-radius: 8px;
+      border: 1px solid #e8e8e8;
+      transition: all 0.3s ease;
+
+      &:hover {
+        border-color: #1890ff;
+      }
+
+      &:focus {
+        border-color: #1890ff;
+        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+      }
     }
   }
 
   // 响应式调整
   @media (max-width: 768px) {
-    padding: 12px;
+    padding: 16px;
 
     .filter-item {
       justify-content: flex-start !important;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+    }
+
+    .stat-card {
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+
+      .stat-icon {
+        margin-right: 0;
+        margin-bottom: 16px;
+      }
+    }
+
+    .chart-card {
+      margin-top: 20px;
     }
   }
+
+  // 动画效果
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .stat-card,
+  .course-list-card,
+  .chart-card {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+
+  .stat-card:nth-child(1) { animation-delay: 0.1s; }
+  .stat-card:nth-child(2) { animation-delay: 0.2s; }
+  .stat-card:nth-child(3) { animation-delay: 0.3s; }
+  .stat-card:nth-child(4) { animation-delay: 0.4s; }
+  .course-list-card { animation-delay: 0.5s; }
+  .chart-card { animation-delay: 0.6s; }
 }

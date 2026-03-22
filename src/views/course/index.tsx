@@ -365,7 +365,7 @@ export default function CoursePage() {
       key: 'hours',
       width: 150,
       render: (_: any, record: Course) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ display: 'flex', gap: 2 }}>
           <div style={{ fontSize: 13, color: '#333' }}>理论: {record.theoreticalHours} 学时</div>
           <div style={{ fontSize: 13, color: '#1890ff' }}>
             实验: {record.experimentalHours} 学时

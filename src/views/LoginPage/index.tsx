@@ -36,7 +36,7 @@ export default function LoginPage() {
   const handleLogin: FormProps<FieldType>['onFinish'] = async values => {
     try {
       const loginParams: LoginParams = {
-        userId: values.username,
+        email: values.username,
         password: values.password,
       }
 

@@ -13,8 +13,11 @@ export const store = configureStore({
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch
 
-// 导出类型化的dispatch hook
-import { useDispatch } from 'react-redux'
+// 导出类型化的hooks
+import { useDispatch, useSelector } from 'react-redux'
 export const useAppDispatch = () => useDispatch<AppDispatch>()
+export const useAppSelector = <TSelected = unknown>(
+  selector: (state: RootState) => TSelected
+): TSelected => useSelector<RootState, TSelected>(selector)
 
 export default store

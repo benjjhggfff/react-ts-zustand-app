@@ -1,42 +1,48 @@
 import React from 'react';
-import { Select } from 'antd';
+import { Select, Form } from 'antd';
 
-const SelectInput: React.FC = () => (
-  <Select
-    showSearch={{
-      optionFilterProp: 'label',
-      filterSort: (optionA, optionB) =>
-        (optionA?.label ?? '').toLowerCase().localeCompare((optionB?.label ?? '').toLowerCase()),
-    }}
-    style={{ width:'100%' ,borderRadius:'20px',  boxShadow: '0 4px 12px rgba(7, 80, 214, 0.1);',    border:' 1px solid #b9bfc9'}}
-    placeholder="Search to Select"
-    options={[
-      {
-        value: '1',
-        label: 'Not Identified',
-      },
-      {
-        value: '2',
-        label: 'Closed',
-      },
-      {
-        value: '3',
-        label: 'Communicated',
-      },
-      {
-        value: '4',
-        label: 'Identified',
-      },
-      {
-        value: '5',
-        label: 'Resolved',
-      },
-      {
-        value: '6',
-        label: 'Cancelled',
-      },
-    ]}
-  />
+interface Option {
+  value: string;
+  label: string;
+}
+
+interface SelectInputProps {
+  title: string;
+  options: Option[];
+  value?: string;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+const SelectInput: React.FC<SelectInputProps> = ({ 
+  title, 
+  options, 
+  value, 
+  onChange, 
+  placeholder = "请选择",
+  disabled = false
+}) => (
+  <Form.Item label={title} style={{ marginBottom: 0 }}>
+    <Select
+      showSearch={{
+        optionFilterProp: 'label',
+        filterSort: (optionA, optionB) =>
+          (optionA?.label ?? '').toLowerCase().localeCompare((optionB?.label ?? '').toLowerCase()),
+      }}
+      style={{ 
+        width: '100%', 
+        borderRadius: '8px', 
+        border: '1px solid #e8e8e8',
+        transition: 'all 0.3s ease'
+      }}
+      placeholder={placeholder}
+      options={options}
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+    />
+  </Form.Item>
 );
 
 export default SelectInput;

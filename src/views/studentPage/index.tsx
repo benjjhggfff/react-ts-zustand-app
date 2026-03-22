@@ -103,10 +103,20 @@ export default function StudentPage() {
       <Card style={{ marginTop: '20px' }}>
         <Row>
           <Col span={6}>
-            <SearchInput title="学生编号" />
+            <SearchInput
+              title="学生编号"
+              value={studentNumber}
+              onChange={e => handleInputChange(e, setStudentNumber)}
+              placeholder="请输入学生编号"
+            />
           </Col>
           <Col span={6}>
-            <SearchInput title="学生姓名" />
+            <SearchInput
+              title="学生姓名"
+              value={studentName}
+              onChange={e => handleInputChange(e, setStudentName)}
+              placeholder="请输入学生姓名"
+            />
           </Col>
           <Col span={6}>
             <SelectInput

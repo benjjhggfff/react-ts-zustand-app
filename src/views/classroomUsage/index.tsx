@@ -1,7 +1,45 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Card, Row, Col, Button, Space, Input, Select, DatePicker, Tabs, Table, Modal, Form, message, notification, Spin } from 'antd'
-import { SearchOutlined, ExportOutlined, PlusOutlined, EyeOutlined, CheckOutlined, CloseOutlined, ReloadOutlined } from '@ant-design/icons'
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
+import {
+  Card,
+  Row,
+  Col,
+  Button,
+  Space,
+  Input,
+  Select,
+  DatePicker,
+  Tabs,
+  Table,
+  Modal,
+  Form,
+  message,
+  notification,
+  Spin,
+} from 'antd'
+import {
+  SearchOutlined,
+  ExportOutlined,
+  PlusOutlined,
+  EyeOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons'
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from 'recharts'
 import styles from './classroomUsage.module.scss'
 import { useScheduleData } from '../../hooks/useScheduleData'
 
@@ -23,17 +61,119 @@ const mockClassrooms = [
 
 // 模拟使用记录数据
 const mockUsageRecords = [
-  { id: '1', classroomId: 'A101', classroomName: 'A101', building: '教学楼A', type: '普通教室', capacity: 45, date: '2026-03-20', time: '08:00-09:40', courseName: '高等数学', teacher: '王老师', status: 'occupied' },
-  { id: '2', classroomId: 'B201', classroomName: 'B201', building: '教学楼B', type: '普通教室', capacity: 45, date: '2026-03-20', time: '10:00-11:40', courseName: '大学英语', teacher: '李老师', status: 'occupied' },
-  { id: '3', classroomId: 'C301', classroomName: 'C301', building: '教学楼C', type: '机房', capacity: 40, date: '2026-03-20', time: '14:00-15:40', courseName: '程序设计', teacher: '张老师', status: 'occupied' },
-  { id: '4', classroomId: 'E101', classroomName: 'E101', building: '实验楼', type: '实验室', capacity: 25, date: '2026-03-20', time: '16:00-17:40', courseName: '物理实验', teacher: '刘老师', status: 'occupied' },
+  {
+    id: '1',
+    classroomId: 'A101',
+    classroomName: 'A101',
+    building: '教学楼A',
+    type: '普通教室',
+    capacity: 45,
+    date: '2026-03-20',
+    time: '08:00-09:40',
+    courseName: '高等数学',
+    teacher: '王老师',
+    status: 'occupied',
+  },
+  {
+    id: '2',
+    classroomId: 'B201',
+    classroomName: 'B201',
+    building: '教学楼B',
+    type: '普通教室',
+    capacity: 45,
+    date: '2026-03-20',
+    time: '10:00-11:40',
+    courseName: '大学英语',
+    teacher: '李老师',
+    status: 'occupied',
+  },
+  {
+    id: '3',
+    classroomId: 'C301',
+    classroomName: 'C301',
+    building: '教学楼C',
+    type: '机房',
+    capacity: 40,
+    date: '2026-03-20',
+    time: '14:00-15:40',
+    courseName: '程序设计',
+    teacher: '张老师',
+    status: 'occupied',
+  },
+  {
+    id: '4',
+    classroomId: 'E101',
+    classroomName: 'E101',
+    building: '实验楼',
+    type: '实验室',
+    capacity: 25,
+    date: '2026-03-20',
+    time: '16:00-17:40',
+    courseName: '物理实验',
+    teacher: '刘老师',
+    status: 'occupied',
+  },
 ]
 
 // 模拟申请记录数据
 const mockApplicationRecords = [
-  { id: '1', applicant: '张三', role: '学生', classroomId: 'A102', classroomName: 'A102', building: '教学楼A', type: '多媒体教室', capacity: 60, useDate: '2026-03-21', startTime: '14:00', endTime: '16:00', purpose: '社团活动', applyTime: '2026-03-19', status: 'pending', approver: null, approvalTime: null, approvalComment: null },
-  { id: '2', applicant: '李四', role: '教师', classroomId: 'B202', classroomName: 'B202', building: '教学楼B', type: '多媒体教室', capacity: 80, useDate: '2026-03-22', startTime: '10:00', endTime: '12:00', purpose: '补课', applyTime: '2026-03-18', status: 'approved', approver: '管理员', approvalTime: '2026-03-19', approvalComment: '同意使用' },
-  { id: '3', applicant: '王五', role: '学生', classroomId: 'F101', classroomName: 'F101', building: '综合楼', type: '活动室', capacity: 100, useDate: '2026-03-23', startTime: '18:00', endTime: '20:00', purpose: '竞赛准备', applyTime: '2026-03-17', status: 'rejected', approver: '管理员', approvalTime: '2026-03-18', approvalComment: '该时间段已被占用' },
+  {
+    id: '1',
+    applicant: '张三',
+    role: '学生',
+    classroomId: 'A102',
+    classroomName: 'A102',
+    building: '教学楼A',
+    type: '多媒体教室',
+    capacity: 60,
+    useDate: '2026-03-21',
+    startTime: '14:00',
+    endTime: '16:00',
+    purpose: '社团活动',
+    applyTime: '2026-03-19',
+    status: 'pending',
+    approver: null,
+    approvalTime: null,
+    approvalComment: null,
+  },
+  {
+    id: '2',
+    applicant: '李四',
+    role: '教师',
+    classroomId: 'B202',
+    classroomName: 'B202',
+    building: '教学楼B',
+    type: '多媒体教室',
+    capacity: 80,
+    useDate: '2026-03-22',
+    startTime: '10:00',
+    endTime: '12:00',
+    purpose: '补课',
+    applyTime: '2026-03-18',
+    status: 'approved',
+    approver: '管理员',
+    approvalTime: '2026-03-19',
+    approvalComment: '同意使用',
+  },
+  {
+    id: '3',
+    applicant: '王五',
+    role: '学生',
+    classroomId: 'F101',
+    classroomName: 'F101',
+    building: '综合楼',
+    type: '活动室',
+    capacity: 100,
+    useDate: '2026-03-23',
+    startTime: '18:00',
+    endTime: '20:00',
+    purpose: '竞赛准备',
+    applyTime: '2026-03-17',
+    status: 'rejected',
+    approver: '管理员',
+    approvalTime: '2026-03-18',
+    approvalComment: '该时间段已被占用',
+  },
 ]
 
 // 模拟图表数据
@@ -79,19 +219,19 @@ const ClassroomUsagePage: React.FC = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
   const [form] = Form.useForm()
-  
+
   // 计算统计数据
   const statistics = {
     totalClassrooms: mockClassrooms.length,
     occupiedClassrooms: mockClassrooms.filter(c => c.status === 'occupied').length,
     freeClassrooms: mockClassrooms.filter(c => c.status === 'free').length,
-    usageRate: Math.round((mockClassrooms.filter(c => c.status === 'occupied').length / mockClassrooms.length) * 100),
+    usageRate: Math.round(
+      (mockClassrooms.filter(c => c.status === 'occupied').length / mockClassrooms.length) * 100
+    ),
     todayApplications: 3,
     pendingApplications: 1,
     approvalRate: 66,
   }
-
-
 
   // 处理搜索
   const handleSearch = useCallback(() => {
@@ -134,9 +274,7 @@ const ClassroomUsagePage: React.FC = () => {
       dataIndex: 'classroomName',
       key: 'classroomName',
       width: 100,
-      render: (text: string) => (
-        <span style={{ fontWeight: 500, color: '#1890ff' }}>{text}</span>
-      ),
+      render: (text: string) => <span className={styles.tableCell}>{text}</span>,
     },
     {
       title: '楼栋 + 类型 + 容量',
@@ -145,7 +283,9 @@ const ClassroomUsagePage: React.FC = () => {
       render: (_: any, record: any) => (
         <div>
           <div>{record.building}</div>
-          <div style={{ fontSize: 12, color: '#666' }}>{record.type} ({record.capacity}人)</div>
+          <div className={styles.tableSubtext}>
+            {record.type} ({record.capacity}人)
+          </div>
         </div>
       ),
     },
@@ -189,11 +329,7 @@ const ClassroomUsagePage: React.FC = () => {
       key: 'action',
       width: 100,
       render: (_: any, record: any) => (
-        <Button
-          icon={<EyeOutlined />}
-          size="small"
-          onClick={() => handleViewDetail(record)}
-        >
+        <Button icon={<EyeOutlined />} size="small" onClick={() => handleViewDetail(record)}>
           查看
         </Button>
       ),
@@ -215,7 +351,7 @@ const ClassroomUsagePage: React.FC = () => {
       render: (_: any, record: any) => (
         <div>
           <div>{record.applicant}</div>
-          <div style={{ fontSize: 12, color: '#666' }}>{record.role}</div>
+          <div className={styles.tableSubtext}>{record.role}</div>
         </div>
       ),
     },
@@ -226,7 +362,9 @@ const ClassroomUsagePage: React.FC = () => {
       render: (_: any, record: any) => (
         <div>
           <div>{record.classroomName}</div>
-          <div style={{ fontSize: 12, color: '#666' }}>{record.type} ({record.capacity}人)</div>
+          <div className={styles.tableSubtext}>
+            {record.type} ({record.capacity}人)
+          </div>
         </div>
       ),
     },
@@ -237,7 +375,9 @@ const ClassroomUsagePage: React.FC = () => {
       render: (_: any, record: any) => (
         <div>
           <div>{record.useDate}</div>
-          <div style={{ fontSize: 12, color: '#666' }}>{record.startTime} - {record.endTime}</div>
+          <div className={styles.tableSubtext}>
+            {record.startTime} - {record.endTime}
+          </div>
         </div>
       ),
     },
@@ -259,36 +399,34 @@ const ClassroomUsagePage: React.FC = () => {
       key: 'status',
       width: 120,
       render: (text: string) => {
-        let color = ''
+        let className = ''
         let label = ''
         switch (text) {
           case 'pending':
-            color = '#faad14'
+            className = styles.statusPending
             label = '待审批'
             break
           case 'approved':
-            color = '#52c41a'
+            className = styles.statusApproved
             label = '已通过'
             break
           case 'rejected':
-            color = '#f5222d'
+            className = styles.statusRejected
             label = '已驳回'
             break
           case 'used':
-            color = '#1890ff'
+            className = styles.statusUsed
             label = '已使用'
             break
           case 'expired':
-            color = '#999'
+            className = styles.statusExpired
             label = '已过期'
             break
           default:
-            color = '#999'
+            className = styles.statusExpired
             label = '未知'
         }
-        return (
-          <span style={{ color, fontWeight: 500 }}>{label}</span>
-        )
+        return <span className={className}>{label}</span>
       },
     },
     {
@@ -325,11 +463,7 @@ const ClassroomUsagePage: React.FC = () => {
                   </Button>
                 </>
               )}
-              <Button
-                icon={<EyeOutlined />}
-                size="small"
-                onClick={() => handleViewDetail(record)}
-              >
+              <Button icon={<EyeOutlined />} size="small" onClick={() => handleViewDetail(record)}>
                 查看
               </Button>
             </Space>
@@ -337,14 +471,8 @@ const ClassroomUsagePage: React.FC = () => {
         } else {
           return (
             <Space size="small">
-              {record.status === 'pending' && (
-                <Button size="small">撤销</Button>
-              )}
-              <Button
-                icon={<EyeOutlined />}
-                size="small"
-                onClick={() => handleViewDetail(record)}
-              >
+              {record.status === 'pending' && <Button size="small">撤销</Button>}
+              <Button icon={<EyeOutlined />} size="small" onClick={() => handleViewDetail(record)}>
                 查看
               </Button>
             </Space>
@@ -367,7 +495,11 @@ const ClassroomUsagePage: React.FC = () => {
               </Button>
             )}
             {currentUser.role !== 'admin' && (
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => setApplicationModalVisible(true)}>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setApplicationModalVisible(true)}
+              >
                 申请教室
               </Button>
             )}
@@ -384,25 +516,25 @@ const ClassroomUsagePage: React.FC = () => {
               <div className={styles.filterItem}>
                 <span className={styles.filterLabel}>时间范围</span>
                 <Space>
-                  <Button 
+                  <Button
                     type={timeRange === 'today' ? 'primary' : 'default'}
                     onClick={() => setTimeRange('today')}
                   >
                     今日
                   </Button>
-                  <Button 
+                  <Button
                     type={timeRange === 'week' ? 'primary' : 'default'}
                     onClick={() => setTimeRange('week')}
                   >
                     本周
                   </Button>
-                  <Button 
+                  <Button
                     type={timeRange === 'month' ? 'primary' : 'default'}
                     onClick={() => setTimeRange('month')}
                   >
                     本月
                   </Button>
-                  <Button 
+                  <Button
                     type={timeRange === 'custom' ? 'primary' : 'default'}
                     onClick={() => setTimeRange('custom')}
                   >
@@ -410,8 +542,8 @@ const ClassroomUsagePage: React.FC = () => {
                   </Button>
                 </Space>
                 {timeRange === 'custom' && (
-                  <RangePicker 
-                    style={{ marginLeft: 12 }} 
+                  <RangePicker
+                    style={{ marginLeft: 12 }}
                     value={dateRange}
                     onChange={setDateRange}
                   />
@@ -487,9 +619,9 @@ const ClassroomUsagePage: React.FC = () => {
       </Card>
 
       {/* 数据概览卡片 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }} >
-        <Col xs={24} sm={12} md={3}   >
-          <Card className={styles.statCard} bordered={false} >
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} md={3}>
+          <Card className={styles.statCard} bordered={false}>
             <div className={styles.statIcon} style={{ background: 'rgba(24,144,255,0.1)' }}>
               <span className={styles.statIconText}>总</span>
             </div>
@@ -553,7 +685,7 @@ const ClassroomUsagePage: React.FC = () => {
             </div>
           </Card>
         </Col>
-              <Col xs={24} sm={12} md={4}>
+        <Col xs={24} sm={12} md={4}>
           <Card className={styles.statCard} bordered={false}>
             <div className={styles.statIcon} style={{ background: 'rgba(250,173,20,0.1)' }}>
               <span className={styles.statIconText}>率</span>
@@ -564,11 +696,16 @@ const ClassroomUsagePage: React.FC = () => {
                 <h3 className={styles.statValue}>{statistics.usageRate}%</h3>
               </div>
               <div className={styles.progressBar}>
-                <div 
-                  className={styles.progressFill} 
-                  style={{ 
+                <div
+                  className={styles.progressFill}
+                  style={{
                     width: `${statistics.usageRate}%`,
-                    backgroundColor: statistics.usageRate < 60 ? '#52c41a' : statistics.usageRate < 80 ? '#faad14' : '#f5222d'
+                    backgroundColor:
+                      statistics.usageRate < 60
+                        ? '#52c41a'
+                        : statistics.usageRate < 80
+                          ? '#faad14'
+                          : '#f5222d',
                   }}
                 />
               </div>
@@ -586,11 +723,11 @@ const ClassroomUsagePage: React.FC = () => {
                 <h3 className={styles.statValue}>{statistics.approvalRate}%</h3>
               </div>
               <div className={styles.progressBar}>
-                <div 
-                  className={styles.progressFill} 
-                  style={{ 
+                <div
+                  className={styles.progressFill}
+                  style={{
                     width: `${statistics.approvalRate}%`,
-                    backgroundColor: '#52c41a'
+                    backgroundColor: '#52c41a',
                   }}
                 />
               </div>
@@ -608,9 +745,15 @@ const ClassroomUsagePage: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="time" />
                 <YAxis domain={[0, 100]} />
-                <Tooltip formatter={(value) => [`${value}%`, '使用率']} />
+                <Tooltip formatter={value => [`${value}%`, '使用率']} />
                 <Legend />
-                <Line type="monotone" dataKey="usage" stroke="#1890ff" strokeWidth={2} activeDot={{ r: 8 }} />
+                <Line
+                  type="monotone"
+                  dataKey="usage"
+                  stroke="#1890ff"
+                  strokeWidth={2}
+                  activeDot={{ r: 8 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </Card>
@@ -633,7 +776,7 @@ const ClassroomUsagePage: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [`${value}间`, '教室数']} />
+                <Tooltip formatter={value => [`${value}间`, '教室数']} />
               </PieChart>
             </ResponsiveContainer>
           </Card>
@@ -656,7 +799,7 @@ const ClassroomUsagePage: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [`${value}%`, '占比']} />
+                <Tooltip formatter={value => [`${value}%`, '占比']} />
               </PieChart>
             </ResponsiveContainer>
           </Card>
@@ -696,39 +839,90 @@ const ClassroomUsagePage: React.FC = () => {
         width={600}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="classroom" label="选择教室" rules={[{ required: true, message: '请选择教室' }]}>
+          <Form.Item
+            name="classroom"
+            label="选择教室"
+            rules={[{ required: true, message: '请选择教室' }]}
+          >
             <Select placeholder="请选择教室">
-              {mockClassrooms.filter(c => c.status === 'free').map(classroom => (
-                <Option key={classroom.id} value={classroom.id}>
-                  {classroom.id} - {classroom.building} - {classroom.type} ({classroom.capacity}人)
-                </Option>
-              ))}
+              {mockClassrooms
+                .filter(c => c.status === 'free')
+                .map(classroom => (
+                  <Option key={classroom.id} value={classroom.id}>
+                    {classroom.id} - {classroom.building} - {classroom.type} ({classroom.capacity}
+                    人)
+                  </Option>
+                ))}
             </Select>
           </Form.Item>
-          <Form.Item name="useDate" label="使用日期" rules={[{ required: true, message: '请选择使用日期' }]}>
+          <Form.Item
+            name="useDate"
+            label="使用日期"
+            rules={[{ required: true, message: '请选择使用日期' }]}
+          >
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="startTime" label="开始时间" rules={[{ required: true, message: '请选择开始时间' }]}>
+              <Form.Item
+                name="startTime"
+                label="开始时间"
+                rules={[{ required: true, message: '请选择开始时间' }]}
+              >
                 <Select placeholder="请选择开始时间">
-                  {['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map(time => (
-                    <Option key={time} value={time}>{time}</Option>
+                  {[
+                    '08:00',
+                    '09:00',
+                    '10:00',
+                    '11:00',
+                    '14:00',
+                    '15:00',
+                    '16:00',
+                    '17:00',
+                    '18:00',
+                    '19:00',
+                    '20:00',
+                  ].map(time => (
+                    <Option key={time} value={time}>
+                      {time}
+                    </Option>
                   ))}
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="endTime" label="结束时间" rules={[{ required: true, message: '请选择结束时间' }]}>
+              <Form.Item
+                name="endTime"
+                label="结束时间"
+                rules={[{ required: true, message: '请选择结束时间' }]}
+              >
                 <Select placeholder="请选择结束时间">
-                  {['09:00', '10:00', '11:00', '12:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'].map(time => (
-                    <Option key={time} value={time}>{time}</Option>
+                  {[
+                    '09:00',
+                    '10:00',
+                    '11:00',
+                    '12:00',
+                    '15:00',
+                    '16:00',
+                    '17:00',
+                    '18:00',
+                    '19:00',
+                    '20:00',
+                    '21:00',
+                  ].map(time => (
+                    <Option key={time} value={time}>
+                      {time}
+                    </Option>
                   ))}
                 </Select>
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="purpose" label="使用用途" rules={[{ required: true, message: '请选择使用用途' }]}>
+          <Form.Item
+            name="purpose"
+            label="使用用途"
+            rules={[{ required: true, message: '请选择使用用途' }]}
+          >
             <Select placeholder="请选择使用用途">
               <Option value="补课">补课</Option>
               <Option value="社团">社团活动</Option>
@@ -737,13 +931,25 @@ const ClassroomUsagePage: React.FC = () => {
               <Option value="其他">其他</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="useCount" label="使用人数" rules={[{ required: true, message: '请输入使用人数' }]}>
+          <Form.Item
+            name="useCount"
+            label="使用人数"
+            rules={[{ required: true, message: '请输入使用人数' }]}
+          >
             <Input type="number" placeholder="请输入使用人数" />
           </Form.Item>
-          <Form.Item name="description" label="用途说明" rules={[{ required: true, message: '请输入用途说明' }]}>
+          <Form.Item
+            name="description"
+            label="用途说明"
+            rules={[{ required: true, message: '请输入用途说明' }]}
+          >
             <Input.TextArea rows={3} placeholder="请详细说明使用用途" />
           </Form.Item>
-          <Form.Item name="contact" label="联系方式" rules={[{ required: true, message: '请输入联系方式' }]}>
+          <Form.Item
+            name="contact"
+            label="联系方式"
+            rules={[{ required: true, message: '请输入联系方式' }]}
+          >
             <Input placeholder="请输入手机号" />
           </Form.Item>
           <Form.Item name="equipment" label="设备需求">
@@ -766,7 +972,7 @@ const ClassroomUsagePage: React.FC = () => {
         footer={[
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
             关闭
-          </Button>
+          </Button>,
         ]}
         width={600}
       >
@@ -808,7 +1014,11 @@ const ClassroomUsagePage: React.FC = () => {
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>使用状态：</span>
-                  <span className={selectedRecord.status === 'occupied' ? styles.occupiedTag : styles.freeTag}>
+                  <span
+                    className={
+                      selectedRecord.status === 'occupied' ? styles.occupiedTag : styles.freeTag
+                    }
+                  >
                     {selectedRecord.status === 'occupied' ? '已占用' : '已结束'}
                   </span>
                 </div>
@@ -821,11 +1031,16 @@ const ClassroomUsagePage: React.FC = () => {
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>申请人：</span>
-                  <span className={styles.detailValue}>{selectedRecord.applicant} ({selectedRecord.role})</span>
+                  <span className={styles.detailValue}>
+                    {selectedRecord.applicant} ({selectedRecord.role})
+                  </span>
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>申请教室：</span>
-                  <span className={styles.detailValue}>{selectedRecord.classroomName} ({selectedRecord.type}, {selectedRecord.capacity}人)</span>
+                  <span className={styles.detailValue}>
+                    {selectedRecord.classroomName} ({selectedRecord.type}, {selectedRecord.capacity}
+                    人)
+                  </span>
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>使用日期：</span>
@@ -833,7 +1048,9 @@ const ClassroomUsagePage: React.FC = () => {
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>使用时间段：</span>
-                  <span className={styles.detailValue}>{selectedRecord.startTime} - {selectedRecord.endTime}</span>
+                  <span className={styles.detailValue}>
+                    {selectedRecord.startTime} - {selectedRecord.endTime}
+                  </span>
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>使用用途：</span>
@@ -845,17 +1062,30 @@ const ClassroomUsagePage: React.FC = () => {
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>审批状态：</span>
-                  <span style={{ 
-                    color: selectedRecord.status === 'pending' ? '#faad14' : 
-                           selectedRecord.status === 'approved' ? '#52c41a' : 
-                           selectedRecord.status === 'rejected' ? '#f5222d' : 
-                           selectedRecord.status === 'used' ? '#1890ff' : '#999',
-                    fontWeight: 500
-                  }}>
-                    {selectedRecord.status === 'pending' ? '待审批' : 
-                     selectedRecord.status === 'approved' ? '已通过' : 
-                     selectedRecord.status === 'rejected' ? '已驳回' : 
-                     selectedRecord.status === 'used' ? '已使用' : '已过期'}
+                  <span
+                    style={{
+                      color:
+                        selectedRecord.status === 'pending'
+                          ? '#faad14'
+                          : selectedRecord.status === 'approved'
+                            ? '#52c41a'
+                            : selectedRecord.status === 'rejected'
+                              ? '#f5222d'
+                              : selectedRecord.status === 'used'
+                                ? '#1890ff'
+                                : '#999',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {selectedRecord.status === 'pending'
+                      ? '待审批'
+                      : selectedRecord.status === 'approved'
+                        ? '已通过'
+                        : selectedRecord.status === 'rejected'
+                          ? '已驳回'
+                          : selectedRecord.status === 'used'
+                            ? '已使用'
+                            : '已过期'}
                   </span>
                 </div>
                 {selectedRecord.approver && (

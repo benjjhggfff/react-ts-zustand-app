@@ -2,10 +2,18 @@ import {type MenuItem} from '../constants/index'
 export interface UserInfo {
     userId:string;
     userName:string;
+    name?: string;
     avatar:string;
     role:number;
     // 部门/学院
     department:string;
+    // 额外信息
+    verified?: boolean;
+    real_name?: string;
+    id_card?: string;
+    phone?: string;
+    email?: string;
+    created_at?: string;
 }
 
 export interface UserState {

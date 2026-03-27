@@ -18,6 +18,8 @@ export interface UserInfo {
   role: string
   email: string
   email_confirmed_at: string
+  // 头像
+  avatar: string
   phone: string
   confirmed_at: string
   last_sign_in_at: string
@@ -47,6 +49,11 @@ export interface UserInfo {
   created_at: string
   updated_at: string
   is_anonymous: boolean
+  // 额外信息
+  name?: string
+  verified?: boolean
+  real_name?: string
+  id_card?: string
 }
 
 export interface ApiResponse<T = any> {
@@ -70,4 +77,11 @@ export interface UserInfoResponse {
 export interface LoginParams {
   email: string
   password: string
+}
+
+export interface UploadFileInput {
+  path: string
+  size: number
+  name: string
+  orginalFileObj: File
 }

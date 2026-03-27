@@ -16,8 +16,7 @@ export default defineConfig(({ command, mode }) => {
         watchFiles: true, // 监听文件变化自动重启
         logger: true, // 在控制台显示请求日志
 
-        // 可选：生产环境可以禁用或开启
-        prodEnabled: false, // 生产环境禁用
+
 
         // 可选：注入代码到 main.ts
         injectCode: `

@@ -68,7 +68,7 @@ export const fetchUserInfo = createAsyncThunk<
   { rejectValue: string }
 >('user/fetchUserInfo', async (_, { rejectWithValue }) => {
   try {
-    const response: ApiResponse<UserInfo> = await fetchUserInfoApi()
+    const response: ApiResponse<UserInfoResponse> = await fetchUserInfoApi()
     if (response.code !== 200) {
       return rejectWithValue(response.msg || '获取用户信息失败')
     }

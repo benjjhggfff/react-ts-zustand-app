@@ -20,7 +20,6 @@
 
   :global(.ant-card-body) {
     padding: 24px;
-        margin: 0 auto;
   }
 
   .headerContent {
@@ -77,6 +76,11 @@
         border-radius: 6px;
         font-weight: 400;
         margin-right: 8px;
+
+        &.ant-btn-primary {
+          background: #1890ff;
+          border: none;
+        }
       }
     }
 
@@ -85,6 +89,7 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 16px;
+      justify-content: flex-start;
 
       :global(.ant-select),
       :global(.ant-input) {
@@ -105,6 +110,12 @@
       :global(.ant-btn) {
         border-radius: 6px;
         font-weight: 500;
+        background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+        border: none;
+
+        &:hover {
+          background: linear-gradient(135deg, #40a9ff 0%, #69c0ff 100%);
+        }
       }
     }
   }
@@ -120,9 +131,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  margin-bottom: 12px;
-  max-height:200px;
+  padding: 20px;
+  margin-bottom: 16px;
+  height: 180px;
+  min-height: 180px;
+  max-height: 180px;
 
   &:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -130,318 +143,14 @@
   }
 
   .statIcon {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     background: linear-gradient(135deg, rgba(24, 144, 255, 0.1) 0%, rgba(64, 169, 255, 0.1) 100%);
-
-    .statIconText {
-      font-size: 20px;
-      font-weight: 600;
-      color: #1890ff;
-    }
   }
-
-  .statContent {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    .statInfo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      width: 100%;
-      margin-bottom: 8px;
-
-      .statTitle {
-        font-size: 12px;
-        color: #666;
-        font-weight: 500;
-        margin: 0 0 4px 0;
-        text-align: center;
-      }
-
-      .statValue {
-        font-size: 24px;
-        font-weight: 600;
-        color: #333;
-        margin: 0;
-        text-align: center;
-      }
-    }
-
-    .progressBar {
-      width: 80%;
-      height: 6px;
-      background: #f0f0f0;
-      border-radius: 3px;
-      overflow: hidden;
-
-      .progressFill {
-        height: 100%;
-        transition: width 0.3s ease;
-        border-radius: 3px;
-      }
-    }
-  }
-}
-
-.chartCard {
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: none;
-  background: #fff;
-  transition: all 0.3s ease;
-
-  &:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
-  }
-
-  :global(.ant-card-head) {
-    border-bottom: 1px solid #f0f0f0;
-    padding: 16px 20px;
-    border-radius: 16px 16px 0 0;
-
-    :global(.ant-card-head-title) {
-      font-size: 16px;
-      font-weight: 500;
-      color: #333;
-    }
-  }
-
-  :global(.ant-card-body) {
-    padding: 20px;
-    margin:0 auto
-  }
-}
-
-.tableCard {
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: none;
-  background: #fff;
-  transition: all 0.3s ease;
-
-  &:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
-  }
-
-  :global(.ant-card-head) {
-    border-bottom: 1px solid #f0f0f0;
-    padding: 16px 20px;
-    border-radius: 16px 16px 0 0;
-  }
-
-  :global(.ant-card-body) {
-    padding: 20px;
-        margin: 0 auto;
-  }
-
-  :global(.ant-tabs-tab) {
-    font-size: 14px;
-    font-weight: 500;
-
-    &.ant-tabs-tab-active .ant-tabs-tab-btn {
-      color: #1890ff;
-    }
-  }
-
-  :global(.ant-tabs-ink-bar) {
-    background-color: #1890ff;
-    height: 2px;
-  }
-
-  .table {
-    :global(.ant-table-thead > tr > th) {
-      background-color: #fafafa;
-      font-weight: 500;
-      color: #333;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    :global(.ant-table-tbody > tr > td) {
-      border-bottom: 1px solid #f0f0f0;
-      transition: background-color 0.2s ease;
-    }
-
-    :global(.ant-table-tbody > tr:hover > td) {
-      background-color: #fafafa;
-    }
-
-    :global(.ant-table-row-selected > td) {
-      background-color: #e6f7ff !important;
-    }
-  }
-}
-
-.occupiedTag {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 500;
-  background-color: #fff1f0;
-  color: #f5222d;
-}
-
-.freeTag {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 500;
-  background-color: #f6ffed;
-  color: #52c41a;
-}
-
-.detailContent {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  .detailItem {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-
-    .detailLabel {
-      font-weight: 500;
-      color: #666;
-      width: 100px;
-      flex-shrink: 0;
-    }
-
-    .detailValue {
-      flex: 1;
-      color: #333;
-      word-break: break-word;
-    }
-  }
-}
-
-// 响应式设计
-@media (max-width: 768px) {
-  .container {
-    padding: 16px;
-  }
-
-  .headerCard {
-    border-radius: 12px;
-
-    :global(.ant-card-body) {
-      padding: 16px;
-      margin: 0 auto;
-    }
-
-    .headerContent {
-      flex-direction: column;
-      align-items: stretch;
-
-      .pageTitle {
-        font-size: 20px;
-        text-align: center;
-      }
-    }
-
-    .filterSection {
-      .filterItem {
-        flex-direction: column;
-        align-items: stretch;
-
-        .filterLabel {
-          margin-bottom: 8px;
-        }
-      }
-
-      .filterRow {
-        flex-direction: column;
-        align-items: stretch;
-      }
-    }
-  }
-
-  .statCard {
-    border-radius: 12px;
-    flex-direction: column;
-    text-align: center;
-    padding: 16px;
-
-    .statIcon {
-      margin-right: 0;
-      margin-bottom: 12px;
-    }
-  }
-
-  .chartCard {
-    border-radius: 12px;
-  }
-
-  .tableCard {
-    border-radius: 12px;
-  }
-}
-
-// 动画效果
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.headerCard,
-.statCard,
-.chartCard,
-.tableCard {
-  animation: fadeInUp 0.5s ease-out forwards;
-}
-
-.headerCard {
-  animation-delay: 0.05s;
-}
-
-.statCard {
-  animation-delay: 0.1s;
-}
-
-.chartCard {
-  animation-delay: 0.15s;
-}
-
-.tableCard {
-  animation-delay: 0.2s;
-}
-
-// 滚动条样式
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
 }

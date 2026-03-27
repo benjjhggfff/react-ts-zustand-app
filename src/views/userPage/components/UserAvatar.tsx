@@ -24,6 +24,7 @@ export default function UserAvatar({ avatar, isEditing, form, onAvatarChange }: 
       }
 
       await updateUserProfileApi({ avatar: res.url })
+      console.log(res)
       onAvatarChange(res.url)
       message.success('头像更新成功')
 

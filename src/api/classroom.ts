@@ -1,36 +1,97 @@
-import Request from '../service/request' // 导入封装的请求实例
+import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../service/supabase'
 
-// 获取教室列表
-export const getClassroomsApi = (params?: any): Promise<any> => {
-  return Request.get({ url: '/classrooms', params })
+// -------------- 教室基础 CRUD --------------
+export const getClassrooms = async () => {
+  const { data, error } = await supabase
+    .from('classrooms')
+    .select(
+      `
+      *,
+      classroom_devices ( devices (id, name) )
+    `
+    )
+    .order('id')
+
+  if (error) throw error
+  return data
 }
 
-// 获取教室使用记录
-export const getUsageRecordsApi = (params?: any): Promise<any> => {
-  return Request.get({ url: '/usage-records', params })
+// 新增教室 + 同时添加设备关联
+export const addClassroom = async classroomData => {
+  const { device_ids, ...classroom } = classroomData
+
+  // 1. 先插入教室
+  const { data: newClass } = await supabase.from('classrooms').insert([classroom]).select().single()
+
+  // 2. 如果选了设备，插入关联表
+  if (device_ids && device_ids.length > 0) {
+    const relations = device_ids.map(device_id => ({
+      classroom_id: newClass.id,
+      device_id,
+    }))
+
+    await supabase.from('classroom_devices').insert(relations)
+  }
 }
 
-// 获取教室申请记录
-export const getApplicationRecordsApi = (params?: any): Promise<any> => {
-  return Request.get({ url: '/application-records', params })
+// 更新教室 + 更新设备关联
+export const updateClassroom = async (id: number, data: any) => {
+  const { device_ids, ...classroomData } = data
+
+  // 1. 更新教室基础信息
+  await supabase.from('classrooms').update(classroomData).eq('id', id)
+
+  // 2. 先删除旧设备关联
+  await supabase.from('classroom_devices').delete().eq('classroom_id', id)
+
+  // 3. 插入新设备关联（如果有选择）
+  if (device_ids && device_ids.length > 0) {
+    const relations = device_ids.map((device_id: number) => ({
+      classroom_id: id,
+      device_id,
+    }))
+    await supabase.from('classroom_devices').insert(relations)
+  }
 }
 
-// 提交教室申请
-export const submitApplicationApi = (data: any): Promise<any> => {
-  return Request.post({ url: '/applications', data })
+// 删除教室
+export const deleteClassroom = async (id: number) => {
+  // 先删设备关联
+  await supabase.from('classroom_devices').delete().eq('classroom_id', id)
+
+  // 再删教室本身
+  const { error } = await supabase.from('classrooms').delete().eq('id', id)
+
+  if (error) throw error
 }
 
-// 审批教室申请
-export const approveApplicationApi = (id: string, data: any): Promise<any> => {
-  return Request.put({ url: `/applications/${id}/approve`, data })
-}
+// -------------- 预约教室（插入 applications） --------------
+// 预约教室
+export const applyClassroom = async (applyData: {
+  classroom_id: number
+  use_date: string
+  start_time: string
+  end_time: string
+  purpose: string
+}) => {
+  // 获取当前登录用户
+  const { data: userData } = await supabase.auth.getUser()
+  const user = userData.user
 
-// 获取统计数据
-export const getStatisticsApi = (params?: any): Promise<any> => {
-  return Request.get({ url: '/classroom-statistics', params })
-}
+  if (!user) throw new Error('请先登录')
 
-// 获取图表数据
-export const getChartDataApi = (params?: any): Promise<any> => {
-  return Request.get({ url: '/classroom-charts', params })
+  const { error } = await supabase.from('applications').insert([
+    {
+      user_id: user.id,
+      classroom_id: applyData.classroom_id,
+      use_date: applyData.use_date,
+      start_time: applyData.start_time,
+      end_time: applyData.end_time,
+      purpose: applyData.purpose,
+      status: 'pending', // 待审核
+    },
+  ])
+
+  if (error) throw error
 }

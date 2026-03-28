@@ -75,12 +75,12 @@ export const applyClassroom = async (applyData: {
   end_time: string
   purpose: string
 }) => {
-  // 获取当前登录用户
   const { data: userData } = await supabase.auth.getUser()
   const user = userData.user
 
   if (!user) throw new Error('请先登录')
 
+  // 1. 插入预约记录
   const { error } = await supabase.from('applications').insert([
     {
       user_id: user.id,
@@ -89,9 +89,22 @@ export const applyClassroom = async (applyData: {
       start_time: applyData.start_time,
       end_time: applyData.end_time,
       purpose: applyData.purpose,
-      status: 'pending', // 待审核
+      status: 'pending',
     },
   ])
 
   if (error) throw error
+
+  // 2. 先查当前预约次数
+  const { data: currentRoom } = await supabase
+    .from('classrooms')
+    .select('apply_count')
+    .eq('id', applyData.classroom_id)
+    .single()
+
+  // 3. 更新次数 +1
+  await supabase
+    .from('classrooms')
+    .update({ apply_count: (currentRoom?.apply_count || 0) + 1 })
+    .eq('id', applyData.classroom_id)
 }

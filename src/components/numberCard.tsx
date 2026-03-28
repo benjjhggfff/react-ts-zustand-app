@@ -23,7 +23,7 @@ const classNames = createStaticStyles(({ css }) => ({
     background: rgba(64, 158, 255, 0.1);
   `,
   cardInfo: css`
-   margin-left: 0.8rem;
+    margin-left: 0.8rem;
   `,
   cardTitle: css`
     color: #606266;
@@ -43,58 +43,56 @@ const classNames = createStaticStyles(({ css }) => ({
     background-color: #ededed;
   `,
   compareData: css`
-  margin-top: 0.8rem;
-  font-size: 0.75rem;
- 
+    margin-top: 0.8rem;
+    font-size: 0.75rem;
   `,
-compareStr:css`
- color: #909399;
-`,
-green:css` color: #67C23A;
-`,
-red:css`
- color: #F56C6C;
-`,
-
+  compareStr: css`
+    color: #909399;
+  `,
+  green: css`
+    color: #67c23a;
+  `,
+  red: css`
+    color: #f56c6c;
+  `,
 }))
 
 export interface NumberCardProps {
-  cardIcon: React.ReactNode;
-  title: string ;
-  value: number;
-  compareText: string;
-  compareValue: number;
+  cardIcon: React.ReactNode
+  title: string
+  value: number
+  compareText: string
+  compareValue: number
 }
 
-const NumberCard: React.FC<NumberCardProps> = (props) => {
+const NumberCard: React.FC<NumberCardProps> = props => {
   return (
-   
-        <Card className={classNames.statCard} variant="borderless">
-          <div className={classNames.cardContent}>
-            <div className={classNames.cardIcon}>
-              {props.cardIcon||<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6"></svg>}
-            </div>
-            <div className={classNames.cardInfo}>
-              <div className={classNames.cardTitle}>
-                {props.title||'总量'}
-              </div>
-              <div className={classNames.cardValue}>
-            {props.value||'50'}
-              </div>
-            </div>
-          </div>
-          <div className={classNames.cardFooter}></div>
-          <div className={ classNames.compareData}>
-            <span className={classNames.compareStr}>{props.compareText||'较上月增长'}</span>
-             &nbsp;
-            <span className={props.compareValue > 0 ? classNames.green : classNames.red}>
-  {props.compareValue}&nbsp;%
-</span>
-
-            
-          </div>
-        </Card>
-    
+    <Card className={classNames.statCard} variant="borderless">
+      <div className={classNames.cardContent}>
+        <div className={classNames.cardIcon}>
+          {props.cardIcon || (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-6 h-6"
+            ></svg>
+          )}
+        </div>
+        <div className={classNames.cardInfo}>
+          <div className={classNames.cardTitle}>{props.title || '总量'}</div>
+          <div className={classNames.cardValue}>{props.value || '0'}</div>
+        </div>
+      </div>
+      <div className={classNames.cardFooter}></div>
+      <div className={classNames.compareData}>
+        <span className={classNames.compareStr}>{props.compareText || '较上月增长'}</span>
+        &nbsp;
+        <span className={props.compareValue > 0 ? classNames.green : classNames.red}>
+          {props.compareValue}&nbsp;%
+        </span>
+      </div>
+    </Card>
   )
 }
 export default NumberCard

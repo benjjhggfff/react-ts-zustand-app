@@ -27,13 +27,13 @@ import {
   applyClassroom,
 } from '../../../api/classroom'
 import dayjs from 'dayjs'
-// 设备类型
+import { useMemo } from 'react'
+
 interface DeviceType {
   id: number
   name: string
 }
 
-// 真实数据库字段类型
 interface ClassroomDataType {
   id: React.Key
   code: string
@@ -55,7 +55,7 @@ interface ClassroomDataType {
   projector: number
   microphone: number
   light: number
-
+  apply_count: number
   classroom_devices?: {
     devices: {
       id: number
@@ -64,30 +64,61 @@ interface ClassroomDataType {
   }[]
 }
 
-const ClassroomList: React.FC = () => {
+// ✅ 已修复 Props
+interface RoomTableProps {
+  searchText: string
+  typeFilter?: number
+  statusFilter?: number
+  timeFilter?: string
+
+  setTotalRooms: (n: number) => void
+  setUsableRooms: (n: number) => void
+  setTodayApplies: (n: number) => void
+  setTotalApplies: (n: number) => void
+}
+
+const RoomTable: React.FC<RoomTableProps> = ({
+  searchText,
+  typeFilter,
+  statusFilter,
+  timeFilter,
+
+  setTotalRooms,
+  setUsableRooms,
+  setTodayApplies,
+  setTotalApplies,
+}) => {
   const [dataSource, setDataSource] = useState<ClassroomDataType[]>([])
   const [devices, setDevices] = useState<DeviceType[]>([])
   const [modalVisible, setModalVisible] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
   const [currentRecord, setCurrentRecord] = useState<ClassroomDataType | null>(null)
   const [form] = Form.useForm()
-  // 预约弹窗
   const [applyModalVisible, setApplyModalVisible] = useState(false)
   const [applyForm] = Form.useForm()
   const [currentApplyRoom, setCurrentApplyRoom] = useState<ClassroomDataType | null>(null)
-  // 打开预约
+  const [applications, setApplications] = useState<any[]>([])
+
+  const filteredList = useMemo(() => {
+    return dataSource.filter(item => {
+      const matchSearch = item.classroom_name.includes(searchText) || item.code.includes(searchText)
+      const matchType = typeFilter === undefined || item.type === typeFilter
+      const matchStatus = statusFilter === undefined || item.status === statusFilter
+      const matchTime = timeFilter === undefined || true
+      return matchSearch && matchType && matchStatus
+    })
+  }, [dataSource, searchText, typeFilter, statusFilter, timeFilter])
+
   const handleApply = (record: ClassroomDataType) => {
     setCurrentApplyRoom(record)
     applyForm.resetFields()
     setApplyModalVisible(true)
   }
-  // 提交预约申请
+
   const handleSubmitApply = async () => {
     if (!currentApplyRoom) return
-
     try {
       const values = await applyForm.validateFields()
-
       await applyClassroom({
         classroom_id: currentApplyRoom.id as number,
         use_date: values.date.format('YYYY-MM-DD'),
@@ -95,14 +126,13 @@ const ClassroomList: React.FC = () => {
         end_time: values.end.format('HH:mm:ss'),
         purpose: values.purpose,
       })
-
-      message.success('预约申请已提交')
+      message.success('预约成功')
       setApplyModalVisible(false)
     } catch (err) {
       console.error('预约失败', err)
     }
   }
-  // 刷新列表
+
   const refreshData = async () => {
     try {
       const res = await getClassrooms()
@@ -112,42 +142,41 @@ const ClassroomList: React.FC = () => {
     }
   }
 
-  // 获取设备列表
   const fetchDevices = async () => {
     try {
       const { data } = await supabase.from('devices').select('id,name')
       setDevices((data as DeviceType[]) || [])
     } catch (err) {
-      console.error('加载设备失败', err)
+      console.error(err)
     }
   }
-
-  // 打开新增
+  const fetchApplications = async () => {
+    try {
+      const { data } = await supabase.from('applications').select('*')
+      setApplications(data || [])
+    } catch (err) {
+      console.error('获取预约失败', err)
+    }
+  }
   const handleAdd = () => {
     setIsEdit(false)
     form.resetFields()
     setModalVisible(true)
   }
-  // 删除教室
+
   const handleDelete = (id: number) => {
     Modal.confirm({
-      title: '确定要删除这个教室吗？',
-      content: '删除后无法恢复',
-      okText: '确定删除',
+      title: '确定删除？',
+      content: '无法恢复',
       okType: 'danger',
-      cancelText: '取消',
       onOk: async () => {
-        try {
-          await deleteClassroom(id)
-          message.success('删除成功')
-          refreshData() // 刷新列表
-        } catch (err) {
-          console.error(err)
-        }
+        await deleteClassroom(id)
+        message.success('删除成功')
+        refreshData()
       },
     })
   }
-  // 打开编辑
+
   const handleEdit = (record: ClassroomDataType) => {
     setIsEdit(true)
     setCurrentRecord(record)
@@ -158,7 +187,6 @@ const ClassroomList: React.FC = () => {
     setModalVisible(true)
   }
 
-  // 提交
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
@@ -176,13 +204,37 @@ const ClassroomList: React.FC = () => {
     }
   }
 
-  // 初始化加载
   useEffect(() => {
     refreshData()
     fetchDevices()
+    fetchApplications()
   }, [])
 
-  // 表格列
+  // ✅ 已修复统计逻辑
+  useEffect(() => {
+    if (!dataSource.length) return
+
+    // 总数
+    setTotalRooms(dataSource.length)
+
+    // 可用数
+    setUsableRooms(dataSource.filter(r => r.status === 1).length)
+
+    // 总预约次数
+    const total = dataSource.reduce((sum, r) => sum + (r.apply_count || 0), 0)
+    setTotalApplies(total)
+
+    // ✅ 今日预约（匹配你数据库格式：2026-03-27 13:08:28）
+    const today = dayjs().format('YYYY-MM-DD') // 2026-03-28
+
+    const todayCount = applications.filter(item => {
+      if (!item.use_date) return false
+      return item.use_date.startsWith(today)
+    }).length
+
+    setTodayApplies(todayCount)
+  }, [dataSource, applications])
+
   const columns: TableColumnsType<ClassroomDataType> = [
     {
       title: '教室名称',
@@ -207,13 +259,7 @@ const ClassroomList: React.FC = () => {
           5: '艺术教室',
           6: '会议室',
         }
-        return (
-          <Badge
-            status="processing"
-            text={map[type] || '未知'}
-            style={{ backgroundColor: '#f0f0f0', color: '#666' }}
-          />
-        )
+        return <Badge status="processing" text={map[type] || '未知'} />
       },
     },
     { title: '容量', render: (_, r) => `${r.capacity}人` },
@@ -233,19 +279,15 @@ const ClassroomList: React.FC = () => {
       ),
     },
     {
-      title: '利用率',
-      render: (_, r) => <Progress percent={r.weekly_usage || 0} strokeWidth={4} />,
+      title: '预约次数',
+      render: (_, record) => <span>{record.apply_count} 次</span>,
     },
     {
       title: '操作',
       render: (_, record) => (
         <Space size="small">
-          <a style={{ color: '#1890ff' }} onClick={() => handleEdit(record)}>
-            编辑
-          </a>
-          <a style={{ color: '#1890ff' }} onClick={() => handleApply(record)}>
-            预约
-          </a>
+          <a onClick={() => handleEdit(record)}>编辑</a>
+          <a onClick={() => handleApply(record)}>预约</a>
           <a style={{ color: '#f5222d' }} onClick={() => handleDelete(record.id as number)}>
             删除
           </a>
@@ -254,7 +296,6 @@ const ClassroomList: React.FC = () => {
     },
   ]
 
-  // 展开行
   const expandedRowRender = (record: ClassroomDataType) => (
     <Row gutter={24} style={{ margin: '16px 0' }}>
       <Col span={8}>
@@ -266,7 +307,6 @@ const ClassroomList: React.FC = () => {
           <Descriptions.Item label="描述">{record.description || '无'}</Descriptions.Item>
         </Descriptions>
       </Col>
-
       <Col span={8}>
         <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>设备状态</h4>
         <Descriptions column={1} bordered size="small">
@@ -280,7 +320,6 @@ const ClassroomList: React.FC = () => {
           <Descriptions.Item label="灯光">{record.light ? '开启' : '关闭'}</Descriptions.Item>
         </Descriptions>
       </Col>
-
       <Col span={8}>
         <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>空间信息</h4>
         <Descriptions column={1} bordered size="small">
@@ -298,18 +337,14 @@ const ClassroomList: React.FC = () => {
   return (
     <div style={{ padding: 16, background: '#fff' }}>
       <div style={{ marginBottom: 16, textAlign: 'right' }}>
-        <Button
-          onClick={handleAdd}
-          style={{ marginRight: 16, backgroundColor: '#cec6e1', color: '#fff' }}
-        >
+        <Button onClick={handleAdd} style={{ backgroundColor: '#cec6e1', color: '#fff' }}>
           新增教室
         </Button>
-        <Button style={{ backgroundColor: '#86a7d8', color: '#fff' }}>导出数据</Button>
       </div>
 
       <Table
         columns={columns}
-        dataSource={dataSource}
+        dataSource={filteredList}
         expandable={{ expandedRowRender, expandRowByClick: true }}
         rowKey="id"
         bordered
@@ -327,15 +362,12 @@ const ClassroomList: React.FC = () => {
           <Form.Item label="教室名称" name="classroom_name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-
           <Form.Item label="教室编号" name="code" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-
           <Form.Item label="位置" name="location">
             <Input />
           </Form.Item>
-
           <Form.Item label="类型" name="type">
             <Select>
               <Select.Option value={1}>普通教室</Select.Option>
@@ -344,17 +376,14 @@ const ClassroomList: React.FC = () => {
               <Select.Option value={4}>机房</Select.Option>
             </Select>
           </Form.Item>
-
           <Form.Item label="教学楼" name="building" rules={[{ required: true }]}>
             <InputNumber style={{ width: '100%' }} />
           </Form.Item>
-
           <Form.Item label="容量" name="capacity">
             <InputNumber style={{ width: '100%' }} />
           </Form.Item>
-
           <Form.Item label="设备" name="device_ids">
-            <Select mode="multiple" placeholder="选择设备">
+            <Select mode="multiple">
               {devices.map(item => (
                 <Select.Option key={item.id} value={item.id}>
                   {item.name}
@@ -362,7 +391,6 @@ const ClassroomList: React.FC = () => {
               ))}
             </Select>
           </Form.Item>
-
           <Form.Item label="状态" name="status">
             <Select>
               <Select.Option value={1}>可用</Select.Option>
@@ -371,7 +399,7 @@ const ClassroomList: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
-      {/* 预约弹窗 */}
+
       <Modal
         title="预约教室"
         open={applyModalVisible}
@@ -383,7 +411,6 @@ const ClassroomList: React.FC = () => {
           <Form.Item name="date" label="使用日期" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
-
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="start" label="开始时间" rules={[{ required: true }]}>
@@ -396,7 +423,6 @@ const ClassroomList: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-
           <Form.Item name="purpose" label="使用用途">
             <Input placeholder="上课/会议/实训等" />
           </Form.Item>
@@ -406,4 +432,4 @@ const ClassroomList: React.FC = () => {
   )
 }
 
-export default ClassroomList
+export default RoomTable

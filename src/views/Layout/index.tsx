@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import type { MenuProps } from 'antd'
 import { useNavigate, Outlet } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
-import { useAppSelector } from '../../../hook' // 导入Redux hooks
+import { useAppSelector } from '../../../hook'
 import ContentBreadcrumb from './Breadcrumb'
 const PageLoading = lazy(() => import('../../components/loading'))
 import {
@@ -14,14 +14,13 @@ import {
 import { Button, Layout, Menu, theme } from 'antd'
 import LogoSvg from '../../components/LogoSVg'
 import styles from './layout.module.scss'
-import type { MenuItem as AuthMenuItem } from '../../constants/routerPermiss' // 导入你的菜单类型
+import type { MenuItem as AuthMenuItem } from '../../constants/routerPermiss'
+import { fetchUserInfo } from '../../store/modules/userStore'
+import { useSelector, useDispatch } from 'react-redux'
 
 const { Header, Sider, Content } = Layout
-
-// 定义antd Menu需要的Item类型
 type AntdMenuItem = Required<MenuProps>['items'][number]
 
-// 图标映射：把mock里的icon字符串转成实际的antd图标组件
 const iconMap = {
   AppstoreAddOutlined: <AppstoreAddOutlined />,
   BankOutlined: <BankOutlined />,
@@ -29,50 +28,47 @@ const iconMap = {
   UserAddOutlined: <UserAddOutlined />,
 }
 
-// 核心函数：把Redux中的menuList转换成antd Menu需要的格式
 const convertMenuToAntdItems = (menuList: AuthMenuItem[]): AntdMenuItem[] => {
   return menuList.map((menu, index) => {
-    // 处理子菜单
     const children =
       menu.children?.map(child => ({
-        key: child.path, // 子菜单key=路径，用于跳转
-        label: child.title, // 子菜单显示文本
+        key: child.path,
+        label: child.title,
       })) || []
 
     return {
-      key: `parent-${index}`, // 父菜单key（自定义）
-      icon: iconMap[menu.icon as keyof typeof iconMap] || <AppstoreAddOutlined />, // 映射图标
-      label: menu.title, // 父菜单显示文本
-      children: children, // 子菜单列表
+      key: `parent-${index}`,
+      icon: iconMap[menu.icon as keyof typeof iconMap] || <AppstoreAddOutlined />,
+      label: menu.title,
+      children: children,
     }
   })
 }
 
 const SideMenuAnHeader: React.FC = () => {
+  const dispatch = useDispatch()
+  const { token, userInfo } = useSelector((state: any) => state.user)
   const [collapsed, setCollapsed] = useState(false)
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken()
-
+  const { token: antdToken } = theme.useToken()
   const navigate = useNavigate()
-  // 核心：从Redux获取动态菜单列表（登录后mock返回的menuList）
   const { menuList } = useAppSelector(state => state.user)
-  // 动态生成antd菜单
   const menuItems = convertMenuToAntdItems(menuList)
-
-  // 获取页面高度
   const windowHight = window.innerHeight
   const minHeight = windowHight - 112
 
-  // 处理菜单点击跳转（保留原有逻辑）
+  // ✅ 只拉取用户信息，绝不 return 中断渲染
+  useEffect(() => {
+    if (token && !userInfo) {
+      dispatch(fetchUserInfo() as any)
+    }
+  }, [token, userInfo, dispatch])
+
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     if (!key.startsWith('parent-')) {
-      // 只处理子菜单点击
       navigate(key)
     }
   }
 
-  // 动态默认选中项：取第一个有效子菜单路径（替代原有的静态 '/resources/classRoom'）
   const defaultSelectedKey = '/user/userInfo'
 
   return (
@@ -100,15 +96,14 @@ const SideMenuAnHeader: React.FC = () => {
           </h1>
         </div>
 
-        {/* 关键修改：使用动态menuItems和动态默认选中项 */}
         <Menu
           theme="light"
           mode="inline"
           className="menu"
           onClick={handleMenuClick}
           style={{ background: 'var(--card-bg-color)' }}
-          defaultSelectedKeys={[defaultSelectedKey]} // 动态默认选中
-          items={menuItems} // 动态菜单列表
+          defaultSelectedKeys={[defaultSelectedKey]}
+          items={menuItems}
         />
       </Sider>
 
@@ -121,13 +116,15 @@ const SideMenuAnHeader: React.FC = () => {
             margin: '8px 8px',
             padding: 4,
             minHeight: minHeight,
-            borderRadius: borderRadiusLG,
+            borderRadius: antdToken.borderRadiusLG,
             overflow: 'auto',
           }}
         >
           <ContentBreadcrumb />
-          <Suspense fallback={<PageLoading></PageLoading>}>
-            <Outlet />
+
+          {/* ✅ 只在这里统一等待用户信息，只出现一次 loading */}
+          <Suspense fallback={<PageLoading />}>
+            {token && !userInfo ? <PageLoading /> : <Outlet />}
           </Suspense>
         </Content>
       </Layout>

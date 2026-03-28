@@ -18,6 +18,7 @@ import {
 } from 'antd'
 import type { TableColumnsType } from 'antd'
 import { supabase } from '../../../service/supabase'
+import { useSelector } from 'react-redux'
 import { useEffect, useState } from 'react'
 import {
   getClassrooms,
@@ -28,6 +29,8 @@ import {
 } from '../../../api/classroom'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
+
+// 判断用户身份
 
 interface DeviceType {
   id: number
@@ -203,7 +206,8 @@ const RoomTable: React.FC<RoomTableProps> = ({
       console.error('提交失败', err)
     }
   }
-
+  const { userInfo } = useSelector((state: any) => state.user)
+  const isAdmin = userInfo?.role === 'admin'
   useEffect(() => {
     refreshData()
     fetchDevices()
@@ -286,11 +290,14 @@ const RoomTable: React.FC<RoomTableProps> = ({
       title: '操作',
       render: (_, record) => (
         <Space size="small">
-          <a onClick={() => handleEdit(record)}>编辑</a>
+          {isAdmin && <a onClick={() => handleEdit(record)}>编辑</a>}
+
           <a onClick={() => handleApply(record)}>预约</a>
-          <a style={{ color: '#f5222d' }} onClick={() => handleDelete(record.id as number)}>
-            删除
-          </a>
+          {isAdmin && (
+            <a style={{ color: '#f5222d' }} onClick={() => handleDelete(record.id as number)}>
+              删除
+            </a>
+          )}
         </Space>
       ),
     },
@@ -337,7 +344,10 @@ const RoomTable: React.FC<RoomTableProps> = ({
   return (
     <div style={{ padding: 16, background: '#fff' }}>
       <div style={{ marginBottom: 16, textAlign: 'right' }}>
-        <Button onClick={handleAdd} style={{ backgroundColor: '#cec6e1', color: '#fff' }}>
+        <Button
+          onClick={handleAdd}
+          style={{ backgroundColor: '#cec6e1', color: '#fff', width: 'fit-content' }}
+        >
           新增教室
         </Button>
       </div>
@@ -356,7 +366,18 @@ const RoomTable: React.FC<RoomTableProps> = ({
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={handleSubmit}
-        width={600}
+        width={500}
+        okText="确定"
+        cancelText="取消"
+        okButtonProps={{
+          type: 'primary',
+
+          style: { backgroundColor: '#1677ff', borderColor: '#1677ff', width: 'fit-content' },
+        }}
+        // 👇 控制取消按钮样式
+        cancelButtonProps={{
+          style: { width: 'fit-content' },
+        }}
       >
         <Form form={form} layout="vertical">
           <Form.Item label="教室名称" name="classroom_name" rules={[{ required: true }]}>
@@ -405,7 +426,18 @@ const RoomTable: React.FC<RoomTableProps> = ({
         open={applyModalVisible}
         onCancel={() => setApplyModalVisible(false)}
         onOk={handleSubmitApply}
+        okText="确定"
+        cancelText="取消"
         width={500}
+        okButtonProps={{
+          type: 'primary',
+
+          style: { backgroundColor: '#1677ff', borderColor: '#1677ff', width: 'fit-content' },
+        }}
+        // 👇 控制取消按钮样式
+        cancelButtonProps={{
+          style: { width: 'fit-content' },
+        }}
       >
         <Form form={applyForm} layout="vertical">
           <Form.Item name="date" label="使用日期" rules={[{ required: true }]}>

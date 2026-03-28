@@ -108,3 +108,20 @@ export const applyClassroom = async (applyData: {
     .update({ apply_count: (currentRoom?.apply_count || 0) + 1 })
     .eq('id', applyData.classroom_id)
 }
+
+// 获取教室申请记录
+export const getClassroomApplications = async () => {
+  const { data, error } = await supabase
+    .from('applications')
+    .select(
+      `
+      *,
+      classrooms(*),
+      profiles(username)
+    `
+    )
+    .order('id', { ascending: false })
+
+  if (error) throw error
+  return data
+}

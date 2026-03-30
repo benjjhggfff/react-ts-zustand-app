@@ -110,18 +110,18 @@ export const applyClassroom = async (applyData: {
 }
 
 // 获取教室申请记录
-export const getClassroomApplications = async () => {
-  const { data, error } = await supabase
-    .from('applications')
-    .select(
-      `
-      *,
-      classrooms(*),
-      profiles(username)
-    `
-    )
-    .order('id', { ascending: false })
 
-  if (error) throw error
-  return data
+export const getClassroomsBase = async () => {
+  const { data } = await supabase.from('classrooms').select('*')
+  return data || []
+}
+
+export const getApplications = async () => {
+  const { data } = await supabase.from('applications').select('*').order('id', { ascending: false })
+  return data || []
+}
+
+export const getUsers = async () => {
+  const { data } = await supabase.from('users').select('id, name')
+  return data || []
 }

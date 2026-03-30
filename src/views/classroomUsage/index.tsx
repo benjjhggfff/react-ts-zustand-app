@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Card,
   Row,
@@ -13,7 +13,6 @@ import {
   Modal,
   Form,
   message,
-  notification,
   Spin,
 } from 'antd'
 import {
@@ -28,8 +27,6 @@ import {
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -37,1081 +34,655 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  Legend,
+  Tooltip as ReTooltip,
 } from 'recharts'
+import dayjs from 'dayjs'
 import styles from './classroomUsage.module.scss'
-import { useScheduleData } from '../../hooks/useScheduleData'
-import { getClassrooms, getClassroomApplications } from '../../api/classroom'
+// 从redux中引入useScheduleData钩子
+import { useSelector } from 'react-redux'
+
+import { getClassroomsBase, getApplications, getUsers } from '../../api/classroom'
+import { supabase } from '../../service/supabase'
 
 const { Option } = Select
 const { RangePicker } = DatePicker
-const { TabPane } = Tabs
-
-// 模拟教室数据
-const mockClassrooms = [
-  { id: 'A101', building: '教学楼A', type: '普通教室', capacity: 45, status: 'occupied' },
-  { id: 'A102', building: '教学楼A', type: '多媒体教室', capacity: 60, status: 'free' },
-  { id: 'B201', building: '教学楼B', type: '普通教室', capacity: 45, status: 'occupied' },
-  { id: 'B202', building: '教学楼B', type: '多媒体教室', capacity: 80, status: 'free' },
-  { id: 'C301', building: '教学楼C', type: '机房', capacity: 40, status: 'occupied' },
-  { id: 'C302', building: '教学楼C', type: '实验室', capacity: 30, status: 'free' },
-  { id: 'E101', building: '实验楼', type: '实验室', capacity: 25, status: 'occupied' },
-  { id: 'F101', building: '综合楼', type: '活动室', capacity: 100, status: 'free' },
-]
-
-// 模拟使用记录数据
-const mockUsageRecords = [
-  {
-    id: '1',
-    classroomId: 'A101',
-    classroomName: 'A101',
-    building: '教学楼A',
-    type: '普通教室',
-    capacity: 45,
-    date: '2026-03-20',
-    time: '08:00-09:40',
-    courseName: '高等数学',
-    teacher: '王老师',
-    status: 'occupied',
-  },
-  {
-    id: '2',
-    classroomId: 'B201',
-    classroomName: 'B201',
-    building: '教学楼B',
-    type: '普通教室',
-    capacity: 45,
-    date: '2026-03-20',
-    time: '10:00-11:40',
-    courseName: '大学英语',
-    teacher: '李老师',
-    status: 'occupied',
-  },
-  {
-    id: '3',
-    classroomId: 'C301',
-    classroomName: 'C301',
-    building: '教学楼C',
-    type: '机房',
-    capacity: 40,
-    date: '2026-03-20',
-    time: '14:00-15:40',
-    courseName: '程序设计',
-    teacher: '张老师',
-    status: 'occupied',
-  },
-  {
-    id: '4',
-    classroomId: 'E101',
-    classroomName: 'E101',
-    building: '实验楼',
-    type: '实验室',
-    capacity: 25,
-    date: '2026-03-20',
-    time: '16:00-17:40',
-    courseName: '物理实验',
-    teacher: '刘老师',
-    status: 'occupied',
-  },
-]
-
-// 模拟申请记录数据
-const mockApplicationRecords = [
-  {
-    id: '1',
-    applicant: '张三',
-    role: '学生',
-    classroomId: 'A102',
-    classroomName: 'A102',
-    building: '教学楼A',
-    type: '多媒体教室',
-    capacity: 60,
-    useDate: '2026-03-21',
-    startTime: '14:00',
-    endTime: '16:00',
-    purpose: '社团活动',
-    applyTime: '2026-03-19',
-    status: 'pending',
-    approver: null,
-    approvalTime: null,
-    approvalComment: null,
-  },
-  {
-    id: '2',
-    applicant: '李四',
-    role: '教师',
-    classroomId: 'B202',
-    classroomName: 'B202',
-    building: '教学楼B',
-    type: '多媒体教室',
-    capacity: 80,
-    useDate: '2026-03-22',
-    startTime: '10:00',
-    endTime: '12:00',
-    purpose: '补课',
-    applyTime: '2026-03-18',
-    status: 'approved',
-    approver: '管理员',
-    approvalTime: '2026-03-19',
-    approvalComment: '同意使用',
-  },
-  {
-    id: '3',
-    applicant: '王五',
-    role: '学生',
-    classroomId: 'F101',
-    classroomName: 'F101',
-    building: '综合楼',
-    type: '活动室',
-    capacity: 100,
-    useDate: '2026-03-23',
-    startTime: '18:00',
-    endTime: '20:00',
-    purpose: '竞赛准备',
-    applyTime: '2026-03-17',
-    status: 'rejected',
-    approver: '管理员',
-    approvalTime: '2026-03-18',
-    approvalComment: '该时间段已被占用',
-  },
-]
-
-// 模拟图表数据
-const mockUsageTrendData = [
-  { time: '08:00', usage: 30 },
-  { time: '09:00', usage: 60 },
-  { time: '10:00', usage: 80 },
-  { time: '11:00', usage: 75 },
-  { time: '14:00', usage: 65 },
-  { time: '15:00', usage: 90 },
-  { time: '16:00', usage: 85 },
-  { time: '17:00', usage: 40 },
-]
-
-const mockBuildingDistributionData = [
-  { name: '教学楼A', value: 15, occupied: 8 },
-  { name: '教学楼B', value: 12, occupied: 7 },
-  { name: '教学楼C', value: 10, occupied: 6 },
-  { name: '实验楼', value: 8, occupied: 5 },
-  { name: '综合楼', value: 5, occupied: 2 },
-]
-
-const mockUsageTypeData = [
-  { name: '系统排课', value: 60 },
-  { name: '临时申请', value: 25 },
-  { name: '闲置', value: 15 },
-]
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
 
+interface Classroom {
+  id: number
+  classroom_name: string
+  location: string
+  type: number
+  capacity: number
+}
+
+interface Application {
+  id: number
+  user_id: string
+  classroom_id: number
+  use_date: string
+  start_time: string
+  end_time: string
+  purpose: string
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+  classrooms: Classroom
+  applicant: { name: string }
+}
+
 const ClassroomUsagePage: React.FC = () => {
-  const { currentUser } = useScheduleData()
+  const userState = useSelector((state: any) => state.user)
+  const currentUser = userState.userInfo // 直接拿到 userInfo 对象
+  const [form] = Form.useForm()
+
   const [loading, setLoading] = useState(false)
   const [timeRange, setTimeRange] = useState('today')
   const [dateRange, setDateRange] = useState<any>(null)
-  const [building, setBuilding] = useState('')
-  const [classroomType, setClassroomType] = useState('')
-  const [capacity, setCapacity] = useState('')
-  const [status, setStatus] = useState('')
+  const [location, setLocation] = useState('')
+  const [classroomType, setClassroomType] = useState<number | undefined>(undefined)
+  const [status, setStatus] = useState('pending')
   const [searchKeyword, setSearchKeyword] = useState('')
-  const [activeTabKey, setActiveTabKey] = useState('usage')
-  const [applicationModalVisible, setApplicationModalVisible] = useState(false)
+
+  const [classrooms, setClassrooms] = useState<Classroom[]>([])
+  const [applications, setApplications] = useState<Application[]>([])
+  const [usageRecords, setUsageRecords] = useState<any[]>([])
+
+  const [activeTab, setActiveTab] = useState('usage')
+  const [applyModalVisible, setApplyModalVisible] = useState(false)
   const [detailModalVisible, setDetailModalVisible] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<any>(null)
-  const [form] = Form.useForm()
 
-  // 计算统计数据
-  const statistics = {
-    totalClassrooms: mockClassrooms.length,
-    occupiedClassrooms: mockClassrooms.filter(c => c.status === 'occupied').length,
-    freeClassrooms: mockClassrooms.filter(c => c.status === 'free').length,
-    usageRate: Math.round(
-      (mockClassrooms.filter(c => c.status === 'occupied').length / mockClassrooms.length) * 100
-    ),
-    todayApplications: 3,
-    pendingApplications: 1,
-    approvalRate: 66,
-  }
+  // ================== 加载 & 拼接数据（无外键版） ==================
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const classData = await getClassroomsBase()
+      const appData = await getApplications()
+      const userData = await getUsers()
 
-  // 处理搜索
-  const handleSearch = useCallback(() => {
-    // 搜索逻辑
-    console.log('搜索', { searchKeyword, building, classroomType, capacity, status })
-    // 这里可以添加模拟的搜索逻辑
-  }, [searchKeyword, building, classroomType, capacity, status])
+      const userMap: any = {}
+      userData.forEach(u => {
+        userMap[u.id] = u
+      })
 
-  // 处理申请提交
-  const handleApplicationSubmit = useCallback(async () => {
+      const classMap: any = {}
+      classData.forEach(c => {
+        classMap[c.id] = c
+      })
+
+      const formattedApps = appData.map(app => ({
+        ...app,
+        applicant: userMap[app.user_id] || { name: '未知' },
+        classrooms: classMap[app.classroom_id] || {},
+      }))
+
+      setClassrooms(classData || [])
+      setApplications(formattedApps || [])
+    } catch (err) {
+      console.error(err)
+      message.error('加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  // ================== 使用记录 ==================
+  useEffect(() => {
+    const list = applications
+      .filter(a => a.status === 'approved')
+      .map(a => ({
+        id: a.id,
+        classroomName: a.classrooms?.classroom_name,
+        location: a.classrooms?.location,
+        type: a.classrooms?.type,
+        capacity: a.classrooms?.capacity,
+        date: a.use_date,
+        time: `${a.start_time} - ${a.end_time}`,
+        courseName: a.purpose,
+        teacher: a.applicant?.name || '未知',
+        status: 'occupied',
+      }))
+    setUsageRecords(list)
+  }, [applications])
+
+  // ================== 筛选 ==================
+  const filteredUsage = useMemo(() => {
+    let list = [...usageRecords]
+    const today = dayjs().format('YYYY-MM-DD')
+
+    if (timeRange === 'custom' && dateRange?.length === 2) {
+      const start = dateRange[0].format('YYYY-MM-DD')
+      const end = dateRange[1].format('YYYY-MM-DD')
+      list = list.filter(i => i.date >= start && i.date <= end)
+    }
+    if (location) list = list.filter(i => i.location === location)
+    if (classroomType !== undefined) list = list.filter(i => i.type === classroomType)
+    if (searchKeyword) {
+      const kw = searchKeyword.toLowerCase()
+      list = list.filter(
+        i =>
+          i.classroomName?.toLowerCase().includes(kw) ||
+          i.teacher?.toLowerCase().includes(kw) ||
+          i.courseName?.toLowerCase().includes(kw)
+      )
+    }
+    return list
+  }, [usageRecords, timeRange, dateRange, location, classroomType, searchKeyword])
+
+  const filteredApps = useMemo(() => {
+    let list = [...applications]
+    if (location) list = list.filter(a => a.classrooms?.location === location)
+    if (classroomType !== undefined) list = list.filter(a => a.classrooms?.type === classroomType)
+    if (status) list = list.filter(a => a.status == 'pending')
+    console.log(list)
+
+    if (searchKeyword) {
+      const kw = searchKeyword.toLowerCase()
+      list = list.filter(
+        a =>
+          a.classrooms?.classroom_name?.toLowerCase().includes(kw) ||
+          a.applicant?.name?.toLowerCase().includes(kw) ||
+          a.purpose?.toLowerCase().includes(kw)
+      )
+    }
+    return list
+  }, [applications, location, classroomType, status, searchKeyword])
+
+  // ================== 统计 ==================
+  const stats = useMemo(() => {
+    const total = classrooms.length
+    const occupied = usageRecords.length
+    const free = Math.max(0, total - occupied)
+    const usageRate = total ? Math.round((occupied / total) * 100) : 0
+    const today = dayjs().format('YYYY-MM-DD')
+    const todayApps = applications.filter(
+      a => dayjs(a.created_at).format('YYYY-MM-DD') === today
+    ).length
+    const pending = applications.filter(a => a.status === 'pending').length
+    return { total, occupied, free, usageRate, todayApps, pending }
+  }, [classrooms, usageRecords, applications])
+
+  // ================== 图表 ==================
+  const chartTrend = useMemo(() => {
+    return ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'].map(h => ({
+      time: h,
+      usage: Math.floor(Math.random() * 40) + 40,
+    }))
+  }, [])
+
+  const chartBuilding = useMemo(() => {
+    const map: Record<string, number> = {}
+    classrooms.forEach(c => {
+      map[c.location] = (map[c.location] || 0) + 1
+    })
+    return Object.entries(map).map(([name, value]) => ({ name, value }))
+  }, [classrooms])
+
+  const chartUsage = useMemo(() => {
+    const total = applications.length
+    const approved = applications.filter(a => a.status === 'approved').length
+    const pending = applications.filter(a => a.status === 'pending').length
+    return [
+      { name: '已通过', value: approved },
+      { name: '待审批', value: pending },
+      { name: '其他', value: total - approved - pending },
+    ]
+  }, [applications])
+
+  // ================== 提交申请 ==================
+  const handleSubmitApply = useCallback(async () => {
     try {
       const values = await form.validateFields()
-      // 提交申请逻辑
-      console.log('提交申请', values)
-      message.success('申请提交成功')
-      setApplicationModalVisible(false)
+      const payload = {
+        user_id: currentUser.id,
+        classroom_id: +values.classroom_id,
+        use_date: values.use_date.format('YYYY-MM-DD'),
+        start_time: values.start_time,
+        end_time: values.end_time,
+        purpose: values.purpose,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+      }
+      const { error } = await supabase.from('applications').insert([payload])
+      if (error) throw error
+      message.success('申请成功')
+      setApplyModalVisible(false)
       form.resetFields()
-    } catch (error) {
-      console.error('表单验证失败', error)
+      loadData()
+    } catch (err) {
+      message.error('提交失败')
     }
-  }, [form])
+  }, [form, currentUser, loadData])
 
-  // 处理审批
-  const handleApproval = useCallback((id: string, approved: boolean, comment?: string) => {
-    // 审批逻辑
-    console.log('审批', { id, approved, comment })
-    message.success(approved ? '审批通过' : '审批驳回')
-  }, [])
+  // ================== 审批 ==================
+  const handleApproval = useCallback(
+    async (id: number, pass: boolean) => {
+      try {
+        const { error } = await supabase
+          .from('applications')
+          .update({
+            status: pass ? 'approved' : 'rejected',
+            approver_id: currentUser.id && currentUser.id.length > 10 ? currentUser.id : null,
+            approval_time: new Date().toISOString(),
+          })
+          .eq('id', id)
+        if (error) throw error
+        message.success(pass ? '已通过' : '已驳回')
+        loadData()
+      } catch {
+        message.error('操作失败')
+      }
+    },
+    [currentUser, loadData]
+  )
 
-  // 处理查看详情
-  const handleViewDetail = useCallback((record: any) => {
-    setSelectedRecord(record)
-    setDetailModalVisible(true)
-  }, [])
-
-  // 渲染使用记录表格列
+  // ================== 表格列 ==================
   const usageColumns = [
+    { title: '教室', dataIndex: 'classroomName', width: 130 },
     {
-      title: '教室编号',
-      dataIndex: 'classroomName',
-      key: 'classroomName',
-      width: 100,
-      render: (text: string) => <span className={styles.tableCell}>{text}</span>,
-    },
-    {
-      title: '楼栋 + 类型 + 容量',
-      key: 'info',
+      title: '信息',
       width: 200,
-      render: (_: any, record: any) => (
-        <div>
-          <div>{record.building}</div>
-          <div className={styles.tableSubtext}>
-            {record.type} ({record.capacity}人)
-          </div>
-        </div>
-      ),
+      render: (_, r) => {
+        const typeMap: Record<number, string> = {
+          1: '普通教室',
+          2: '实训车间',
+          3: '实验室',
+          4: '机房',
+          5: '艺术教室',
+          6: '会议室',
+        }
+        return (
+          <>
+            {r.location}
+            &nbsp;
+            {typeMap[r.type] || '未知'}
+            &nbsp;
+            {r.capacity}人
+          </>
+        )
+      },
     },
+    { title: '日期', dataIndex: 'date', width: 120 },
+    { title: '时间段', dataIndex: 'time', width: 160 },
+    { title: '用途', dataIndex: 'courseName', width: 180 },
+    { title: '使用人', dataIndex: 'teacher', width: 120 },
     {
-      title: '使用日期',
-      dataIndex: 'date',
-      key: 'date',
-      width: 120,
-    },
-    {
-      title: '节次 / 时间段',
-      dataIndex: 'time',
-      key: 'time',
-      width: 150,
-    },
-    {
-      title: '课程名称 / 使用用途',
-      dataIndex: 'courseName',
-      key: 'courseName',
-      width: 180,
-    },
-    {
-      title: '任课教师 / 使用人',
-      dataIndex: 'teacher',
-      key: 'teacher',
-      width: 150,
-    },
-    {
-      title: '使用状态',
-      dataIndex: 'status',
-      key: 'status',
+      title: '状态',
       width: 100,
-      render: (text: string) => (
-        <span className={text === 'occupied' ? styles.occupiedTag : styles.freeTag}>
-          {text === 'occupied' ? '已占用' : '已结束'}
-        </span>
-      ),
+      render: () => <span className={styles.occupiedTag}>已占用</span>,
     },
     {
       title: '操作',
-      key: 'action',
       width: 100,
-      render: (_: any, record: any) => (
-        <Button icon={<EyeOutlined />} size="small" onClick={() => handleViewDetail(record)}>
+      render: (_, r) => (
+        <Button
+          style={{ marginTop: '-40px' }}
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => {
+            setSelectedRecord(r)
+            setDetailModalVisible(true)
+          }}
+        >
           查看
         </Button>
       ),
     },
   ]
 
-  // 渲染申请记录表格列
-  const applicationColumns = [
+  const appColumns = [
+    // { title: 'ID', dataIndex: 'id', width: 70 },
+    { title: '申请人', render: (_, r) => r.applicant?.name || '未知', width: 120 },
     {
-      title: '申请 ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 80,
-    },
-    {
-      title: '申请人',
-      key: 'applicant',
-      width: 150,
-      render: (_: any, record: any) => (
-        <div>
-          <div>{record.applicant}</div>
-          <div className={styles.tableSubtext}>{record.role}</div>
-        </div>
-      ),
-    },
-    {
-      title: '申请教室',
-      key: 'classroom',
-      width: 180,
-      render: (_: any, record: any) => (
-        <div>
-          <div>{record.classroomName}</div>
-          <div className={styles.tableSubtext}>
-            {record.type} ({record.capacity}人)
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: '申请使用时间',
-      key: 'useTime',
-      width: 200,
-      render: (_: any, record: any) => (
-        <div>
-          <div>{record.useDate}</div>
-          <div className={styles.tableSubtext}>
-            {record.startTime} - {record.endTime}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: '使用用途',
-      dataIndex: 'purpose',
-      key: 'purpose',
-      width: 120,
-    },
-    {
-      title: '申请时间',
-      dataIndex: 'applyTime',
-      key: 'applyTime',
-      width: 120,
-    },
-    {
-      title: '审批状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 120,
-      render: (text: string) => {
-        let className = ''
-        let label = ''
-        switch (text) {
-          case 'pending':
-            className = styles.statusPending
-            label = '待审批'
-            break
-          case 'approved':
-            className = styles.statusApproved
-            label = '已通过'
-            break
-          case 'rejected':
-            className = styles.statusRejected
-            label = '已驳回'
-            break
-          case 'used':
-            className = styles.statusUsed
-            label = '已使用'
-            break
-          case 'expired':
-            className = styles.statusExpired
-            label = '已过期'
-            break
-          default:
-            className = styles.statusExpired
-            label = '未知'
+      title: '教室',
+      render: (_, r) => {
+        const typeMap: Record<number, string> = {
+          1: '普通',
+          2: '实训',
+          3: '实验',
+          4: '机房',
+          5: '艺术',
+          6: '会议',
         }
-        return <span className={className}>{label}</span>
+        return `${r.classrooms?.classroom_name}（${typeMap[r.classrooms?.type] || '未知'}）`
       },
+      width: 180,
     },
     {
-      title: '审批人',
-      dataIndex: 'approver',
-      key: 'approver',
+      title: '时间',
+      render: (_, r) => (
+        <>
+          {r.use_date}
+          <br />
+          {r.start_time} - {r.end_time}
+        </>
+      ),
+      width: 180,
+    },
+    { title: '用途', dataIndex: 'purpose', width: 140 },
+    {
+      title: '状态',
       width: 100,
+      render: (_, r) => {
+        if (r.status === 'pending') return <span className={styles.statusPending}>待审批</span>
+        if (r.status === 'approved') return <span className={styles.statusApproved}>已通过</span>
+        if (r.status === 'rejected') return <span className={styles.statusRejected}>已驳回</span>
+        return <span>未知</span>
+      },
     },
     {
       title: '操作',
-      key: 'action',
-      width: 150,
-      render: (_: any, record: any) => {
-        if (currentUser.role === 'admin') {
-          return (
-            <Space size="small">
-              {record.status === 'pending' && (
-                <>
-                  <Button
-                    type="primary"
-                    icon={<CheckOutlined />}
-                    size="small"
-                    onClick={() => handleApproval(record.id, true)}
-                  >
-                    通过
-                  </Button>
-                  <Button
-                    danger
-                    icon={<CloseOutlined />}
-                    size="small"
-                    onClick={() => handleApproval(record.id, false)}
-                  >
-                    驳回
-                  </Button>
-                </>
-              )}
-              <Button icon={<EyeOutlined />} size="small" onClick={() => handleViewDetail(record)}>
-                查看
+      width: currentUser.role === 'admin' ? 180 : 120,
+      render: (_, r) => (
+        <Space.Compact
+          style={{
+            display: 'flex',
+            gap: '8px',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            marginTop: '-40px',
+          }}
+        >
+          {currentUser.role === 'admin' && r.status === 'pending' && (
+            <>
+              <Button size="small" onClick={() => handleApproval(r.id, true)}>
+                通过
               </Button>
-            </Space>
-          )
-        } else {
-          return (
-            <Space size="small">
-              {record.status === 'pending' && <Button size="small">撤销</Button>}
-              <Button icon={<EyeOutlined />} size="small" onClick={() => handleViewDetail(record)}>
-                查看
+              <Button size="small" onClick={() => handleApproval(r.id, false)}>
+                驳回
               </Button>
-            </Space>
-          )
-        }
-      },
+            </>
+          )}
+          <Button
+            size="small"
+            onClick={() => {
+              setSelectedRecord(r)
+              setDetailModalVisible(true)
+            }}
+          >
+            查看
+          </Button>
+        </Space.Compact>
+      ),
     },
+  ]
+
+  const tabItems = [
+    {
+      key: 'usage',
+      label: '教室使用记录',
+      children: (
+        <Table
+          columns={usageColumns}
+          dataSource={filteredUsage}
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+        />
+      ),
+    },
+    {
+      key: 'application',
+      label: '教室申请管理',
+      children: (
+        <Table
+          columns={appColumns}
+          dataSource={filteredApps}
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+        />
+      ),
+    },
+  ]
+
+  // 类型选项
+  const typeOptions = [
+    { label: '普通教室', value: 1 },
+    { label: '实训车间', value: 2 },
+    { label: '实验室', value: 3 },
+    { label: '机房', value: 4 },
+    { label: '艺术教室', value: 5 },
+    { label: '会议室', value: 6 },
   ]
 
   return (
     <div className={styles.container}>
-      {/* 页面头部 */}
-      <Card className={styles.headerCard} bordered={false}>
-        <div className={styles.headerContent}>
-          <h1 className={styles.pageTitle}>教室使用统计 & 申请管理</h1>
-          <Space>
-            {currentUser.role === 'admin' && (
-              <Button type="default" icon={<ExportOutlined />}>
-                导出报表
-              </Button>
-            )}
-            {currentUser.role !== 'admin' && (
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setApplicationModalVisible(true)}
-              >
-                申请教室
-              </Button>
-            )}
-            <Button icon={<ReloadOutlined />} onClick={() => setLoading(true)}>
-              刷新
-            </Button>
-          </Space>
-        </div>
-
-        {/* 筛选区 */}
-        <div className={styles.filterSection}>
-          <Row gutter={[16, 16]} align="middle">
-            <Col xs={24} sm={12} md={8}>
-              <div className={styles.filterItem}>
-                <span className={styles.filterLabel}>时间范围</span>
-                <Space>
-                  <Button
-                    type={timeRange === 'today' ? 'primary' : 'default'}
-                    onClick={() => setTimeRange('today')}
-                  >
-                    今日
-                  </Button>
-                  <Button
-                    type={timeRange === 'week' ? 'primary' : 'default'}
-                    onClick={() => setTimeRange('week')}
-                  >
-                    本周
-                  </Button>
-                  <Button
-                    type={timeRange === 'month' ? 'primary' : 'default'}
-                    onClick={() => setTimeRange('month')}
-                  >
-                    本月
-                  </Button>
-                  <Button
-                    type={timeRange === 'custom' ? 'primary' : 'default'}
-                    onClick={() => setTimeRange('custom')}
-                  >
-                    自定义
-                  </Button>
-                </Space>
-                {timeRange === 'custom' && (
-                  <RangePicker
-                    style={{ marginLeft: 12 }}
-                    value={dateRange}
-                    onChange={setDateRange}
-                  />
-                )}
-              </div>
-            </Col>
-            <Col xs={24} sm={12} md={16}>
-              <div className={styles.filterRow}>
-                <Select
-                  placeholder="选择楼栋"
-                  style={{ width: 120, marginRight: 12 }}
-                  value={building}
-                  onChange={setBuilding}
-                  allowClear
+      <Spin spinning={loading}>
+        <Card className={styles.headerCard} variant="borderless">
+          <div className={styles.headerContent}>
+            <h1 className={styles.pageTitle}>教室使用统计与申请管理</h1>
+            <Space>
+              {currentUser.role === 'admin' && <Button icon={<ExportOutlined />}>导出报表</Button>}
+              {currentUser.role !== 'admin' && (
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setApplyModalVisible(true)}
                 >
-                  <Option value="教学楼A">教学楼A</Option>
-                  <Option value="教学楼B">教学楼B</Option>
-                  <Option value="教学楼C">教学楼C</Option>
-                  <Option value="实验楼">实验楼</Option>
-                  <Option value="综合楼">综合楼</Option>
+                  申请教室
+                </Button>
+              )}
+              <Button icon={<ReloadOutlined />} onClick={loadData}>
+                刷新
+              </Button>
+            </Space>
+          </div>
+
+          <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+            <Col xs={24} md={8}>
+              <Space>
+                <Button
+                  type={timeRange === 'today' ? 'primary' : 'default'}
+                  onClick={() => setTimeRange('today')}
+                >
+                  今日
+                </Button>
+                <Button
+                  type={timeRange === 'week' ? 'primary' : 'default'}
+                  onClick={() => setTimeRange('week')}
+                >
+                  本周
+                </Button>
+                <Button
+                  type={timeRange === 'month' ? 'primary' : 'default'}
+                  onClick={() => setTimeRange('month')}
+                >
+                  本月
+                </Button>
+                <Button
+                  type={timeRange === 'custom' ? 'primary' : 'default'}
+                  onClick={() => setTimeRange('custom')}
+                >
+                  自定义
+                </Button>
+                {timeRange === 'custom' && (
+                  <RangePicker onChange={setDateRange} value={dateRange} />
+                )}
+              </Space>
+            </Col>
+            <Col xs={24} md={16}>
+              <Space wrap>
+                <Select
+                  placeholder="楼栋"
+                  allowClear
+                  style={{ width: 130 }}
+                  value={location}
+                  onChange={setLocation}
+                >
+                  {[...new Set(classrooms.map(c => c.location))].map(b => (
+                    <Option key={b} value={b}>
+                      {b}
+                    </Option>
+                  ))}
                 </Select>
+
                 <Select
                   placeholder="教室类型"
-                  style={{ width: 120, marginRight: 12 }}
+                  allowClear
+                  style={{ width: 130 }}
                   value={classroomType}
                   onChange={setClassroomType}
-                  allowClear
                 >
-                  <Option value="普通教室">普通教室</Option>
-                  <Option value="多媒体教室">多媒体教室</Option>
-                  <Option value="机房">机房</Option>
-                  <Option value="实验室">实验室</Option>
-                  <Option value="活动室">活动室</Option>
+                  {typeOptions.map(t => (
+                    <Option key={t.value} value={t.value}>
+                      {t.label}
+                    </Option>
+                  ))}
                 </Select>
+
                 <Select
-                  placeholder="容量"
-                  style={{ width: 100, marginRight: 12 }}
-                  value={capacity}
-                  onChange={setCapacity}
+                  placeholder="状态"
                   allowClear
-                >
-                  <Option value="small">小 (&lt;50人)</Option>
-                  <Option value="medium">中 (50-100人)</Option>
-                  <Option value="large">大 (&gt;100人)</Option>
-                </Select>
-                <Select
-                  placeholder="使用状态"
-                  style={{ width: 120, marginRight: 12 }}
+                  style={{ width: 120 }}
                   value={status}
                   onChange={setStatus}
-                  allowClear
                 >
-                  <Option value="occupied">已占用</Option>
-                  <Option value="free">空闲</Option>
                   <Option value="pending">待审批</Option>
+                  <Option value="approved">已通过</Option>
                   <Option value="rejected">已驳回</Option>
                 </Select>
+
                 <Input
-                  placeholder="搜索教室号、教师姓名"
-                  style={{ width: 200, marginRight: 12 }}
+                  placeholder="搜索"
+                  style={{ width: 200 }}
                   value={searchKeyword}
                   onChange={e => setSearchKeyword(e.target.value)}
                   suffix={<SearchOutlined />}
-                  onPressEnter={handleSearch}
                 />
-                <Button type="primary" onClick={handleSearch}>
-                  查询
-                </Button>
-              </div>
+                <Button type="primary">查询</Button>
+              </Space>
             </Col>
           </Row>
-        </div>
-      </Card>
+        </Card>
 
-      {/* 数据概览卡片 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={3}>
-          <Card className={styles.statCard} bordered={false}>
-            <div className={styles.statIcon} style={{ background: 'rgba(24,144,255,0.1)' }}>
-              <span className={styles.statIconText}>总</span>
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statInfo}>
-                <h3 className={styles.statTitle}>教室总数</h3>
-                <h3 className={styles.statValue}>{statistics.totalClassrooms}</h3>
-              </div>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={3}>
-          <Card className={styles.statCard} bordered={false}>
-            <div className={styles.statIcon} style={{ background: 'rgba(255,77,77,0.1)' }}>
-              <span className={styles.statIconText}>占</span>
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statInfo}>
-                <h3 className={styles.statTitle}>当前占用数</h3>
-                <h3 className={styles.statValue}>{statistics.occupiedClassrooms}</h3>
-              </div>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={3}>
-          <Card className={styles.statCard} bordered={false}>
-            <div className={styles.statIcon} style={{ background: 'rgba(82,196,26,0.1)' }}>
-              <span className={styles.statIconText}>空</span>
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statInfo}>
-                <h3 className={styles.statTitle}>当前空闲数</h3>
-                <h3 className={styles.statValue}>{statistics.freeClassrooms}</h3>
-              </div>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={3}>
-          <Card className={styles.statCard} bordered={false}>
-            <div className={styles.statIcon} style={{ background: 'rgba(138,43,226,0.1)' }}>
-              <span className={styles.statIconText}>申</span>
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statInfo}>
-                <h3 className={styles.statTitle}>今日申请</h3>
-                <h3 className={styles.statValue}>{statistics.todayApplications}</h3>
-              </div>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={3}>
-          <Card className={styles.statCard} bordered={false}>
-            <div className={styles.statIcon} style={{ background: 'rgba(0,191,255,0.1)' }}>
-              <span className={styles.statIconText}>待</span>
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statInfo}>
-                <h3 className={styles.statTitle}>待审批数</h3>
-                <h3 className={styles.statValue}>{statistics.pendingApplications}</h3>
-              </div>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={4}>
-          <Card className={styles.statCard} bordered={false}>
-            <div className={styles.statIcon} style={{ background: 'rgba(250,173,20,0.1)' }}>
-              <span className={styles.statIconText}>率</span>
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statInfo}>
-                <h3 className={styles.statTitle}>教室使用率</h3>
-                <h3 className={styles.statValue}>{statistics.usageRate}%</h3>
-              </div>
-              <div className={styles.progressBar}>
-                <div
-                  className={styles.progressFill}
-                  style={{
-                    width: `${statistics.usageRate}%`,
-                    backgroundColor:
-                      statistics.usageRate < 60
-                        ? '#52c41a'
-                        : statistics.usageRate < 80
-                          ? '#faad14'
-                          : '#f5222d',
-                  }}
-                />
-              </div>
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={24} md={5}>
-          <Card className={styles.statCard} bordered={false}>
-            <div className={styles.statIcon} style={{ background: 'rgba(30,144,255,0.1)' }}>
-              <span className={styles.statIconText}>通</span>
-            </div>
-            <div className={styles.statContent}>
-              <div className={styles.statInfo}>
-                <h3 className={styles.statTitle}>审批通过率</h3>
-                <h3 className={styles.statValue}>{statistics.approvalRate}%</h3>
-              </div>
-              <div className={styles.progressBar}>
-                <div
-                  className={styles.progressFill}
-                  style={{
-                    width: `${statistics.approvalRate}%`,
-                    backgroundColor: '#52c41a',
-                  }}
-                />
-              </div>
-            </div>
-          </Card>
-        </Col>
-      </Row>
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col xs={12} sm={8} md={4}>
+            <StatCard label="教室总数" value={stats.total} />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <StatCard label="已占用" value={stats.occupied} />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <StatCard label="空闲" value={stats.free} />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <StatCard label="今日申请" value={stats.todayApps} />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <StatCard label="待审批" value={stats.pending} />
+          </Col>
+          <Col xs={12} sm={8} md={4}>
+            <StatCard label="使用率" value={`${stats.usageRate}%`} />
+          </Col>
+        </Row>
 
-      {/* 可视化图表区 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} md={12}>
-          <Card className={styles.chartCard} bordered={false} title="教室使用率趋势图">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={mockUsageTrendData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis domain={[0, 100]} />
-                <Tooltip formatter={value => [`${value}%`, '使用率']} />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="usage"
-                  stroke="#1890ff"
-                  strokeWidth={2}
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-        <Col xs={24} md={6}>
-          <Card className={styles.chartCard} bordered={false} title="楼栋教室分布">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={mockBuildingDistributionData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {mockBuildingDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={value => [`${value}间`, '教室数']} />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-        <Col xs={24} md={6}>
-          <Card className={styles.chartCard} bordered={false} title="使用类型分布">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={mockUsageTypeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#82ca9d"
-                  dataKey="value"
-                >
-                  {mockUsageTypeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={value => [`${value}%`, '占比']} />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-      </Row>
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col xs={24} md={12}>
+            <Card title="时段使用率" variant="borderless" className={styles.chartCard}>
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={chartTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="time" />
+                  <YAxis domain={[0, 100]} />
+                  <ReTooltip />
+                  <Line type="monotone" dataKey="usage" stroke="#1890ff" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </Card>
+          </Col>
+          <Col xs={24} md={6}>
+            <Card title="楼栋分布" variant="borderless" className={styles.chartCard}>
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie data={chartBuilding} outerRadius={70} dataKey="value" label={d => d.name}>
+                    {chartBuilding.map((_, i) => (
+                      <Cell fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </Card>
+          </Col>
+          <Col xs={24} md={6}>
+            <Card title="申请状态" variant="borderless" className={styles.chartCard}>
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie data={chartUsage} outerRadius={70} dataKey="value" label={d => d.name}>
+                    {chartUsage.map((_, i) => (
+                      <Cell fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </Card>
+          </Col>
+        </Row>
 
-      {/* 教室使用状态列表 */}
-      <Card className={styles.tableCard} bordered={false}>
-        <Tabs activeKey={activeTabKey} onChange={setActiveTabKey}>
-          <TabPane tab="教室使用记录" key="usage">
-            <Table
-              columns={usageColumns}
-              dataSource={mockUsageRecords}
-              rowKey="id"
-              pagination={{ pageSize: 10 }}
-              className={styles.table}
-            />
-          </TabPane>
-          <TabPane tab="教室申请记录" key="application">
-            <Table
-              columns={applicationColumns}
-              dataSource={mockApplicationRecords}
-              rowKey="id"
-              pagination={{ pageSize: 10 }}
-              className={styles.table}
-            />
-          </TabPane>
-        </Tabs>
-      </Card>
-
-      {/* 教室申请弹窗 */}
-      <Modal
-        title="申请教室"
-        open={applicationModalVisible}
-        onCancel={() => setApplicationModalVisible(false)}
-        onOk={handleApplicationSubmit}
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="classroom"
-            label="选择教室"
-            rules={[{ required: true, message: '请选择教室' }]}
-          >
-            <Select placeholder="请选择教室">
-              {mockClassrooms
-                .filter(c => c.status === 'free')
-                .map(classroom => (
-                  <Option key={classroom.id} value={classroom.id}>
-                    {classroom.id} - {classroom.building} - {classroom.type} ({classroom.capacity}
-                    人)
-                  </Option>
-                ))}
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="useDate"
-            label="使用日期"
-            rules={[{ required: true, message: '请选择使用日期' }]}
-          >
-            <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="startTime"
-                label="开始时间"
-                rules={[{ required: true, message: '请选择开始时间' }]}
-              >
-                <Select placeholder="请选择开始时间">
-                  {[
-                    '08:00',
-                    '09:00',
-                    '10:00',
-                    '11:00',
-                    '14:00',
-                    '15:00',
-                    '16:00',
-                    '17:00',
-                    '18:00',
-                    '19:00',
-                    '20:00',
-                  ].map(time => (
-                    <Option key={time} value={time}>
-                      {time}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="endTime"
-                label="结束时间"
-                rules={[{ required: true, message: '请选择结束时间' }]}
-              >
-                <Select placeholder="请选择结束时间">
-                  {[
-                    '09:00',
-                    '10:00',
-                    '11:00',
-                    '12:00',
-                    '15:00',
-                    '16:00',
-                    '17:00',
-                    '18:00',
-                    '19:00',
-                    '20:00',
-                    '21:00',
-                  ].map(time => (
-                    <Option key={time} value={time}>
-                      {time}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item
-            name="purpose"
-            label="使用用途"
-            rules={[{ required: true, message: '请选择使用用途' }]}
-          >
-            <Select placeholder="请选择使用用途">
-              <Option value="补课">补课</Option>
-              <Option value="社团">社团活动</Option>
-              <Option value="自习">自习</Option>
-              <Option value="竞赛">竞赛</Option>
-              <Option value="其他">其他</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item
-            name="useCount"
-            label="使用人数"
-            rules={[{ required: true, message: '请输入使用人数' }]}
-          >
-            <Input type="number" placeholder="请输入使用人数" />
-          </Form.Item>
-          <Form.Item
-            name="description"
-            label="用途说明"
-            rules={[{ required: true, message: '请输入用途说明' }]}
-          >
-            <Input.TextArea rows={3} placeholder="请详细说明使用用途" />
-          </Form.Item>
-          <Form.Item
-            name="contact"
-            label="联系方式"
-            rules={[{ required: true, message: '请输入联系方式' }]}
-          >
-            <Input placeholder="请输入手机号" />
-          </Form.Item>
-          <Form.Item name="equipment" label="设备需求">
-            <Select mode="multiple" placeholder="请选择设备需求">
-              <Option value="投影">投影</Option>
-              <Option value="空调">空调</Option>
-              <Option value="麦克风">麦克风</Option>
-              <Option value="音响">音响</Option>
-              <Option value="白板">白板</Option>
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* 详情弹窗 */}
-      <Modal
-        title={selectedRecord ? (activeTabKey === 'usage' ? '教室使用详情' : '申请详情') : '详情'}
-        open={detailModalVisible}
-        onCancel={() => setDetailModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            关闭
-          </Button>,
-        ]}
-        width={600}
-      >
-        {selectedRecord && (
-          <div className={styles.detailContent}>
-            {activeTabKey === 'usage' ? (
-              <>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>教室编号：</span>
-                  <span className={styles.detailValue}>{selectedRecord.classroomName}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>楼栋：</span>
-                  <span className={styles.detailValue}>{selectedRecord.building}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>类型：</span>
-                  <span className={styles.detailValue}>{selectedRecord.type}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>容量：</span>
-                  <span className={styles.detailValue}>{selectedRecord.capacity}人</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>使用日期：</span>
-                  <span className={styles.detailValue}>{selectedRecord.date}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>时间段：</span>
-                  <span className={styles.detailValue}>{selectedRecord.time}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>课程名称：</span>
-                  <span className={styles.detailValue}>{selectedRecord.courseName}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>任课教师：</span>
-                  <span className={styles.detailValue}>{selectedRecord.teacher}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>使用状态：</span>
-                  <span
-                    className={
-                      selectedRecord.status === 'occupied' ? styles.occupiedTag : styles.freeTag
-                    }
-                  >
-                    {selectedRecord.status === 'occupied' ? '已占用' : '已结束'}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>申请 ID：</span>
-                  <span className={styles.detailValue}>{selectedRecord.id}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>申请人：</span>
-                  <span className={styles.detailValue}>
-                    {selectedRecord.applicant} ({selectedRecord.role})
-                  </span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>申请教室：</span>
-                  <span className={styles.detailValue}>
-                    {selectedRecord.classroomName} ({selectedRecord.type}, {selectedRecord.capacity}
-                    人)
-                  </span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>使用日期：</span>
-                  <span className={styles.detailValue}>{selectedRecord.useDate}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>使用时间段：</span>
-                  <span className={styles.detailValue}>
-                    {selectedRecord.startTime} - {selectedRecord.endTime}
-                  </span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>使用用途：</span>
-                  <span className={styles.detailValue}>{selectedRecord.purpose}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>申请时间：</span>
-                  <span className={styles.detailValue}>{selectedRecord.applyTime}</span>
-                </div>
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>审批状态：</span>
-                  <span
-                    style={{
-                      color:
-                        selectedRecord.status === 'pending'
-                          ? '#faad14'
-                          : selectedRecord.status === 'approved'
-                            ? '#52c41a'
-                            : selectedRecord.status === 'rejected'
-                              ? '#f5222d'
-                              : selectedRecord.status === 'used'
-                                ? '#1890ff'
-                                : '#999',
-                      fontWeight: 500,
-                    }}
-                  >
+        <Card variant="borderless">
+          <Tabs activeKey={activeTab} items={tabItems} onChange={setActiveTab} />
+        </Card>
+        <Modal
+          title="详情"
+          open={detailModalVisible}
+          onCancel={() => setDetailModalVisible(false)}
+          footer={<Button onClick={() => setDetailModalVisible(false)}>关闭</Button>}
+          width={600}
+        >
+          {selectedRecord && (
+            <div style={{ lineHeight: 2.2 }}>
+              {activeTab === 'usage' ? (
+                <>
+                  <p>教室：{selectedRecord.classroomName}</p>
+                  <p>位置：{selectedRecord.location}</p>
+                  <p>
+                    类型：
+                    {(() => {
+                      const m = { 1: '普通', 2: '实训', 3: '实验', 4: '机房', 5: '艺术', 6: '会议' }
+                      return m[selectedRecord.type] || '未知'
+                    })()}
+                  </p>
+                  <p>日期：{selectedRecord.date}</p>
+                  <p>时间：{selectedRecord.time}</p>
+                  <p>用途：{selectedRecord.courseName}</p>
+                  <p>使用人：{selectedRecord.teacher}</p>
+                </>
+              ) : (
+                <>
+                  <p>ID：{selectedRecord.id}</p>
+                  <p>申请人：{selectedRecord.applicant?.name}</p>
+                  <p>教室：{selectedRecord.classrooms?.classroom_name}</p>
+                  <p>日期：{selectedRecord.use_date}</p>
+                  <p>
+                    时间：{selectedRecord.start_time} - {selectedRecord.end_time}
+                  </p>
+                  <p>用途：{selectedRecord.purpose}</p>
+                  <p>
+                    状态：
                     {selectedRecord.status === 'pending'
                       ? '待审批'
                       : selectedRecord.status === 'approved'
                         ? '已通过'
-                        : selectedRecord.status === 'rejected'
-                          ? '已驳回'
-                          : selectedRecord.status === 'used'
-                            ? '已使用'
-                            : '已过期'}
-                  </span>
-                </div>
-                {selectedRecord.approver && (
-                  <>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>审批人：</span>
-                      <span className={styles.detailValue}>{selectedRecord.approver}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>审批时间：</span>
-                      <span className={styles.detailValue}>{selectedRecord.approvalTime}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>审批意见：</span>
-                      <span className={styles.detailValue}>{selectedRecord.approvalComment}</span>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </Modal>
+                        : '已驳回'}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </Modal>
+      </Spin>
     </div>
   )
 }
+
+const StatCard: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
+  <Card className={styles.statCard} variant="borderless">
+    <div style={{ fontSize: 14, color: '#666' }}>{label}</div>
+    <div style={{ fontSize: 22, fontWeight: 'bold', marginTop: 4 }}>{value}</div>
+  </Card>
+)
 
 export default ClassroomUsagePage

@@ -1,5 +1,17 @@
 import React, { useState } from 'react'
-import { Modal, Form, Select, Button, Space, Spin, message, Checkbox, InputNumber, DatePicker, Divider } from 'antd'
+import {
+  Modal,
+  Form,
+  Select,
+  Button,
+  Space,
+  Spin,
+  message,
+  Checkbox,
+  InputNumber,
+  DatePicker,
+  Divider,
+} from 'antd'
 import { CalendarOutlined, RocketOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import type { Major, Teacher, Course } from '../../../constants/course'
 import dayjs from 'dayjs'
@@ -41,9 +53,14 @@ const AutoScheduleModal: React.FC<AutoScheduleModalProps> = ({
   }
 
   // 生成课程时间
-  const generateCourseTime = (day: number, startHour: number, duration: number) => {
-    // 周一到周五，8:00开始
-    const baseDate = dayjs().startOf('week').add(day, 'day')
+  const generateCourseTime = (
+    day: number,
+    startHour: number,
+    duration: number,
+    startDate: dayjs.Dayjs
+  ) => {
+    // 周一到周五，8:00开始，使用用户选择的开始日期作为基准
+    const baseDate = startDate.startOf('week').add(day, 'day')
     const start = baseDate.hour(startHour).minute(0).second(0)
     const end = start.add(duration, 'hour').add(40, 'minute') // 每节课1小时40分钟
     return {
@@ -53,26 +70,57 @@ const AutoScheduleModal: React.FC<AutoScheduleModalProps> = ({
   }
 
   // 检查时间冲突
-  const checkTimeConflict = (start: string, end: string, teacherId: string, location: string, excludeId?: string) => {
-    return existingCourses.some(course => {
+  const checkTimeConflict = (
+    start: string,
+    end: string,
+    teacherId: string,
+    location: string,
+    excludeId?: string,
+    newCourses: Course[] = []
+  ) => {
+    // 检查现有课程
+    const existingConflict = existingCourses.some(course => {
       if (excludeId && course.id === excludeId) return false
-      
+
       // 时间冲突
       const courseStart = new Date(course.start)
       const courseEnd = new Date(course.end)
       const newStart = new Date(start)
       const newEnd = new Date(end)
-      
-      const timeOverlap = (newStart < courseEnd && newEnd > courseStart)
-      
+
+      const timeOverlap = newStart < courseEnd && newEnd > courseStart
+
       // 教师冲突
       const teacherConflict = course.teacherId === teacherId
-      
+
       // 教室冲突
       const locationConflict = course.location === location
-      
-      return (timeOverlap && (teacherConflict || locationConflict))
+
+      return timeOverlap && (teacherConflict || locationConflict)
     })
+
+    // 检查新添加的课程
+    const newCourseConflict = newCourses.some(course => {
+      if (excludeId && course.id === excludeId) return false
+
+      // 时间冲突
+      const courseStart = new Date(course.start)
+      const courseEnd = new Date(course.end)
+      const newStart = new Date(start)
+      const newEnd = new Date(end)
+
+      const timeOverlap = newStart < courseEnd && newEnd > courseStart
+
+      // 教师冲突
+      const teacherConflict = course.teacherId === teacherId
+
+      // 教室冲突
+      const locationConflict = course.location === location
+
+      return timeOverlap && (teacherConflict || locationConflict)
+    })
+
+    return existingConflict || newCourseConflict
   }
 
   // 自动排课算法
@@ -84,68 +132,96 @@ const AutoScheduleModal: React.FC<AutoScheduleModalProps> = ({
       // 模拟排课过程
       await new Promise(resolve => setTimeout(resolve, 2000))
 
-      const { major, classes, teachers: selectedTeachers, startDate, endDate, priority } = values
-      
+      const {
+        major,
+        classes,
+        teachers: selectedTeachers,
+        startDate,
+        endDate,
+        priority,
+        scheduleWeeks,
+      } = values
+
       // 生成课程数据
       const newCourses: Course[] = []
       const locations = ['A101', 'A102', 'B201', 'B202', 'C301', 'C302', 'D401', 'D402']
       const courses = [
-        { title: '高等数学', type: 'required', duration: 2 },
-        { title: '大学英语', type: 'required', duration: 2 },
-        { title: '数据结构', type: 'major', duration: 2 },
-        { title: '操作系统', type: 'major', duration: 2 },
-        { title: '计算机网络', type: 'elective', duration: 2 },
-        { title: '数据库原理', type: 'major', duration: 2 },
-        { title: '软件工程', type: 'major', duration: 2 },
-        { title: '算法设计', type: 'elective', duration: 2 },
+        { title: '高等数学', type: 'required', duration: 2, weeklyHours: 4 }, // 每周2次课
+        { title: '大学英语', type: 'required', duration: 2, weeklyHours: 4 },
+        { title: '数据结构', type: 'major', duration: 2, weeklyHours: 4 },
+        { title: '操作系统', type: 'major', duration: 2, weeklyHours: 4 },
+        { title: '计算机网络', type: 'elective', duration: 2, weeklyHours: 2 }, // 每周1次课
+        { title: '数据库原理', type: 'major', duration: 2, weeklyHours: 4 },
+        { title: '软件工程', type: 'major', duration: 2, weeklyHours: 4 },
+        { title: '算法设计', type: 'elective', duration: 2, weeklyHours: 2 },
       ]
 
       let courseId = Date.now()
-      
+
       // 为每个选中的班级排课
       classes.forEach((classId: string) => {
         const className = availableClasses.find(c => c.id === classId)?.name || ''
-        
+
         // 为每个课程排课
         courses.forEach((course, courseIndex) => {
           const teacher = selectedTeachers[courseIndex % selectedTeachers.length]
           const teacherInfo = teachers.find(t => t.id === teacher)
-          
-          // 尝试在不同时间和教室安排课程
-          let scheduled = false
-          let attempts = 0
-          const maxAttempts = 20
 
-          while (!scheduled && attempts < maxAttempts) {
-            // 随机选择星期（1-5，周一到周五）
-            const day = Math.floor(Math.random() * 5) + 1
-            // 随机选择时间段（8:00, 10:00, 14:00, 16:00）
-            const startHour = [8, 10, 14, 16][Math.floor(Math.random() * 4)]
-            // 随机选择教室
-            const location = locations[Math.floor(Math.random() * locations.length)]
-            
-            const { start, end } = generateCourseTime(day, startHour, course.duration)
-            
-            // 检查冲突
-            if (!checkTimeConflict(start, end, teacher, location)) {
-              newCourses.push({
-                id: (courseId++).toString(),
-                title: course.title,
-                start,
-                end,
-                teacher: teacherInfo?.name || '',
-                teacherId: teacher,
-                location,
-                color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-                status: 'active',
-                classId,
-                type: course.type,
-                tags: [className, course.type === 'required' ? '必修' : '选修'],
-              })
-              scheduled = true
+          // 计算每周需要的课次数
+          const weeklySessions = course.weeklyHours / 2 // 每节课2小时
+
+          // 为每周安排课程
+          for (let week = 0; week < scheduleWeeks; week++) {
+            // 为每周的每个课次安排时间
+            for (let session = 0; session < weeklySessions; session++) {
+              // 尝试在不同时间和教室安排课程
+              let scheduled = false
+              let attempts = 0
+              const maxAttempts = 50 // 增加尝试次数
+
+              while (!scheduled && attempts < maxAttempts) {
+                // 随机选择星期（1-5，周一到周五）
+                const day = Math.floor(Math.random() * 5) + 1
+                // 随机选择时间段（8:00, 10:00, 14:00, 16:00）
+                const startHour = [8, 10, 14, 16][Math.floor(Math.random() * 4)]
+                // 随机选择教室
+                const location = locations[Math.floor(Math.random() * locations.length)]
+
+                // 计算当前周的开始日期
+                const weekStartDate = startDate.add(week, 'week')
+                const { start, end } = generateCourseTime(
+                  day,
+                  startHour,
+                  course.duration,
+                  weekStartDate
+                )
+
+                // 检查冲突
+                if (!checkTimeConflict(start, end, teacher, location, undefined, newCourses)) {
+                  newCourses.push({
+                    id: (courseId++).toString(),
+                    title: course.title,
+                    start,
+                    end,
+                    teacher: teacherInfo?.name || '',
+                    teacherId: teacher,
+                    location,
+                    color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
+                    status: 'active',
+                    classId,
+                    type: course.type,
+                    tags: [
+                      className,
+                      course.type === 'required' ? '必修' : '选修',
+                      `第${week + 1}周`,
+                    ],
+                  })
+                  scheduled = true
+                }
+
+                attempts++
+              }
             }
-            
-            attempts++
           }
         })
       })
@@ -275,6 +351,10 @@ const AutoScheduleModal: React.FC<AutoScheduleModalProps> = ({
 
         <Form.Item name="maxCoursesPerDay" label="每天最大课程数">
           <InputNumber min={1} max={8} defaultValue={4} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item name="scheduleWeeks" label="排课周数">
+          <InputNumber min={1} max={20} defaultValue={16} style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item name="avoidWeekends" valuePropName="checked" label="避开周末">

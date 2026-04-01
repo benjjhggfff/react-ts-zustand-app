@@ -87,9 +87,9 @@ const ScheduleEditPage: React.FC = () => {
   }, [])
 
   const handleEventDrop = useCallback(
-    (info: any) => {
+    async (info: any) => {
       const { event } = info
-      const success = updateCourse(event.id, {
+      const success = await updateCourse(event.id, {
         start: event.startStr,
         end: event.endStr,
       })
@@ -101,14 +101,14 @@ const ScheduleEditPage: React.FC = () => {
   )
 
   const handleModalSubmit = useCallback(
-    (values: any) => {
+    async (values: any) => {
       setModalLoading(true)
-      setTimeout(() => {
+      try {
         let success = false
         if (editingCourse) {
-          success = updateCourse(editingCourse.id, values)
+          success = await updateCourse(editingCourse.id, values)
         } else {
-          success = addCourse({
+          success = await addCourse({
             ...values,
             classId: selectedClass || undefined,
             teacherId: teachers.find(t => t.name === values.teacher)?.id,
@@ -117,8 +117,11 @@ const ScheduleEditPage: React.FC = () => {
         if (success) {
           setModalVisible(false)
         }
+      } catch (error) {
+        console.error('提交课程失败:', error)
+      } finally {
         setModalLoading(false)
-      }, 500)
+      }
     },
     [editingCourse, addCourse, updateCourse, selectedClass, teachers]
   )

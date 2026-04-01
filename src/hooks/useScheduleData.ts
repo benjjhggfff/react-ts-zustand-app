@@ -4,6 +4,15 @@ import { useLocation } from 'react-router-dom'
 import dayjs from 'dayjs'
 import * as XLSX from 'xlsx'
 import type { Major, Teacher, Course, User } from '../constants/course'
+import {
+  getSchedules,
+  addSchedule,
+  updateSchedule,
+  deleteSchedule,
+  getCourses,
+  getClassrooms,
+  checkScheduleConflict,
+} from '../api/schedule'
 
 const generateRandomColor = () => {
   const letters = '0123456789ABCDEF'
@@ -77,138 +86,110 @@ export const useScheduleData = () => {
     [history]
   )
 
-  // 模拟数据加载
+  // 从API加载数据
   useEffect(() => {
-    setLoading(true)
-    setTimeout(() => {
-      const mockMajors: Major[] = [
-        {
-          id: '1',
-          name: '计算机科学与技术',
-          classes: [
-            {
-              id: '1-1',
-              name: '计算机科学与技术1班',
-              students: [
-                { id: '1-1-1', name: '张三', studentNumber: '2023001' },
-                { id: '1-1-2', name: '李四', studentNumber: '2023002' },
-              ],
-            },
-            {
-              id: '1-2',
-              name: '计算机科学与技术2班',
-              students: [
-                { id: '1-2-1', name: '王五', studentNumber: '2023003' },
-                { id: '1-2-2', name: '赵六', studentNumber: '2023004' },
-              ],
-            },
-          ],
-        },
-        {
-          id: '2',
-          name: '软件工程',
-          classes: [
-            {
-              id: '2-1',
-              name: '软件工程1班',
-              students: [
-                { id: '2-1-1', name: '钱七', studentNumber: '2023005' },
-                { id: '2-1-2', name: '孙八', studentNumber: '2023006' },
-              ],
-            },
-          ],
-        },
-      ]
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        // 获取课程表数据
+        const schedulesData = await getSchedules()
 
-      const mockTeachers: Teacher[] = [
-        { id: '1', name: '王老师' },
-        { id: '2', name: '李老师' },
-        { id: '3', name: '张老师' },
-        { id: '4', name: '刘老师' },
-        { id: '5', name: '陈老师' },
-      ]
+        // 获取课程列表
+        const coursesData = await getCourses()
 
-      const mockCourses: Course[] = [
-        {
-          id: '1',
-          title: '高等数学',
-          start: '2026-03-10T08:00:00',
-          end: '2026-03-10T09:40:00',
-          teacher: '王老师',
-          teacherId: '1',
-          location: 'A101',
-          color: generateRandomColor(),
-          status: 'active',
-          classId: '1-1',
-          type: 'required',
-          tags: ['专业课', '第一学期'],
-        },
-        {
-          id: '2',
-          title: '大学英语',
-          start: '2026-03-10T10:00:00',
-          end: '2026-03-10T11:40:00',
-          teacher: '李老师',
-          teacherId: '2',
-          location: 'B202',
-          color: generateRandomColor(),
-          status: 'active',
-          classId: '1-1',
-          type: 'required',
-          tags: ['公共课'],
-        },
-        {
-          id: '3',
-          title: '数据结构',
-          start: '2026-03-11T14:00:00',
-          end: '2026-03-11T15:40:00',
-          teacher: '张老师',
-          teacherId: '3',
-          location: 'C303',
-          color: generateRandomColor(),
-          status: 'active',
-          classId: '1-2',
-          type: 'major',
-          tags: ['专业课', '核心'],
-        },
-        {
-          id: '4',
-          title: '操作系统',
-          start: '2026-03-12T08:00:00',
-          end: '2026-03-12T09:40:00',
-          teacher: '刘老师',
-          teacherId: '4',
-          location: 'D404',
-          color: generateRandomColor(),
-          status: 'active',
-          classId: '2-1',
-          type: 'major',
-          tags: ['专业课'],
-        },
-        {
-          id: '5',
-          title: '计算机网络',
-          start: '2026-03-12T10:00:00',
-          end: '2026-03-12T11:40:00',
-          teacher: '陈老师',
-          teacherId: '5',
-          location: 'E505',
-          color: generateRandomColor(),
-          status: 'active',
-          classId: '2-1',
-          type: 'elective',
-          tags: ['选修课'],
-        },
-      ]
+        // 获取教室列表
+        const classroomsData = await getClassrooms()
 
-      setMajors(mockMajors)
-      setTeachers(mockTeachers)
-      setCourses(mockCourses)
-      // 初始化历史栈，将初始状态作为第一个版本
-      setHistory([JSON.parse(JSON.stringify(mockCourses))])
-      setHistoryIndex(0)
-      setLoading(false)
-    }, 500)
+        // 转换数据格式为前端需要的结构
+        const formattedCourses: Course[] = schedulesData.map((schedule: any) => {
+          // 计算日期（使用当前学期的周一作为基准）
+          const baseDate = dayjs().startOf('week')
+          const courseDate = baseDate.add(schedule.day_of_week - 1, 'day')
+          const startTime = schedule.start_time.split(':')
+          const endTime = schedule.end_time.split(':')
+
+          return {
+            id: schedule.id.toString(),
+            title: schedule.courses?.coursename || '未命名课程',
+            start: courseDate
+              .hour(parseInt(startTime[0]))
+              .minute(parseInt(startTime[1]))
+              .toISOString(),
+            end: courseDate.hour(parseInt(endTime[0])).minute(parseInt(endTime[1])).toISOString(),
+            teacher: schedule.courses?.teacher || '未分配教师',
+            teacherId: schedule.courses?.id?.toString() || '',
+            location:
+              schedule.classrooms?.classroom_name || schedule.classrooms?.code || '未分配教室',
+            color: generateRandomColor(),
+            status: 'active',
+            classId: '1-1', // 暂时硬编码，后续需要从数据库中获取
+            type: 'required',
+            tags: [schedule.semester],
+          }
+        })
+
+        // 模拟专业和班级数据
+        const mockMajors: Major[] = [
+          {
+            id: '1',
+            name: '计算机科学与技术',
+            classes: [
+              {
+                id: '1-1',
+                name: '计算机科学与技术1班',
+                students: [
+                  { id: '1-1-1', name: '张三', studentNumber: '2023001' },
+                  { id: '1-1-2', name: '李四', studentNumber: '2023002' },
+                ],
+              },
+              {
+                id: '1-2',
+                name: '计算机科学与技术2班',
+                students: [
+                  { id: '1-2-1', name: '王五', studentNumber: '2023003' },
+                  { id: '1-2-2', name: '赵六', studentNumber: '2023004' },
+                ],
+              },
+            ],
+          },
+          {
+            id: '2',
+            name: '软件工程',
+            classes: [
+              {
+                id: '2-1',
+                name: '软件工程1班',
+                students: [
+                  { id: '2-1-1', name: '钱七', studentNumber: '2023005' },
+                  { id: '2-1-2', name: '孙八', studentNumber: '2023006' },
+                ],
+              },
+            ],
+          },
+        ]
+
+        // 从课程数据中提取教师列表
+        const uniqueTeachers = [...new Set(coursesData.map((course: any) => course.teacher))]
+        const formattedTeachers: Teacher[] = uniqueTeachers.map((teacher, index) => ({
+          id: (index + 1).toString(),
+          name: teacher,
+        }))
+
+        setMajors(mockMajors)
+        setTeachers(formattedTeachers)
+        setCourses(formattedCourses)
+        // 初始化历史栈，将初始状态作为第一个版本
+        setHistory([JSON.parse(JSON.stringify(formattedCourses))])
+        setHistoryIndex(0)
+      } catch (error) {
+        console.error('加载数据失败:', error)
+        message.error('加载数据失败，请重试')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
   }, [])
 
   // 从路由状态初始化筛选
@@ -298,7 +279,7 @@ export const useScheduleData = () => {
 
   // ==================== 单课程操作 ====================
   const addCourse = useCallback(
-    (values: {
+    async (values: {
       title: string
       teacher: string
       teacherId?: string
@@ -325,25 +306,48 @@ export const useScheduleData = () => {
         return false
       }
 
-      const newCourse: Course = {
-        ...values,
-        id: Date.now().toString(),
-        color: generateRandomColor(),
-        status: 'pending',
+      try {
+        // 解析日期和时间
+        const startDate = dayjs(values.start)
+        const endDate = dayjs(values.end)
+        const dayOfWeek = startDate.day() || 7 // 将周日从0改为7
+
+        // 这里需要根据前端数据找到对应的course_id和classroom_id
+        // 暂时使用硬编码，后续需要优化
+        const course_id = 1
+        const classroom_id = 1
+
+        // 调用API添加课程表
+        const newSchedule = await addSchedule({
+          course_id,
+          classroom_id,
+          day_of_week: dayOfWeek,
+          start_time: startDate.format('HH:mm:ss'),
+          end_time: endDate.format('HH:mm:ss'),
+          semester: values.tags[0] || '2026春季',
+          year: startDate.year(),
+        })
+
+        const newCourse: Course = {
+          ...values,
+          id: newSchedule.id.toString(),
+          color: generateRandomColor(),
+          status: 'active',
+        }
+        setCourses(prev => [...prev, newCourse])
+        message.success('课程已添加')
+        return true
+      } catch (error) {
+        console.error('添加课程失败:', error)
+        message.error('添加课程失败，请重试')
+        return false
       }
-      setCourses(prev => [...prev, newCourse])
-      message.success('课程已添加，等待老师确认')
-      notification.info({
-        message: '通知老师',
-        description: `新课程 ${newCourse.title} 已被添加`,
-      })
-      return true
     },
     [checkConflicts, isPastDate, pushHistory]
   )
 
   const updateCourse = useCallback(
-    (id: string, updates: Partial<Course>) => {
+    async (id: string, updates: Partial<Course>) => {
       const course = courses.find(c => c.id === id)
       if (!course) return false
 
@@ -368,23 +372,46 @@ export const useScheduleData = () => {
         return false
       }
 
-      setCourses(prev => prev.map(c => (c.id === id ? { ...c, ...updates, status: 'pending' } : c)))
-      message.success('课程已修改，等待老师确认')
-      notification.info({
-        message: '通知老师',
-        description: `课程 ${updates.title || course.title} 已被修改`,
-      })
-      return true
+      try {
+        // 解析日期和时间
+        const startDate = dayjs(newStart)
+        const endDate = dayjs(newEnd)
+        const dayOfWeek = startDate.day() || 7 // 将周日从0改为7
+
+        // 调用API更新课程表
+        await updateSchedule(parseInt(id), {
+          day_of_week: dayOfWeek,
+          start_time: startDate.format('HH:mm:ss'),
+          end_time: endDate.format('HH:mm:ss'),
+        })
+
+        setCourses(prev =>
+          prev.map(c => (c.id === id ? { ...c, ...updates, status: 'active' } : c))
+        )
+        message.success('课程已修改')
+        return true
+      } catch (error) {
+        console.error('修改课程失败:', error)
+        message.error('修改课程失败，请重试')
+        return false
+      }
     },
     [courses, checkConflicts, isPastDate, pushHistory]
   )
 
   const deleteCourse = useCallback(
-    (id: string) => {
+    async (id: string) => {
       // 保存历史
       pushHistory()
-      setCourses(prev => prev.filter(c => c.id !== id))
-      message.success('课程已删除')
+      try {
+        // 调用API删除课程表
+        await deleteSchedule(parseInt(id))
+        setCourses(prev => prev.filter(c => c.id !== id))
+        message.success('课程已删除')
+      } catch (error) {
+        console.error('删除课程失败:', error)
+        message.error('删除课程失败，请重试')
+      }
     },
     [pushHistory]
   )

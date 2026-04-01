@@ -29,7 +29,7 @@ import {
 } from '../../../api/classroom'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
-
+import { useLocalCache } from '../../../hooks/useLocalCache/useLocalCache'
 // 判断用户身份
 
 interface DeviceType {
@@ -91,8 +91,8 @@ const RoomTable: React.FC<RoomTableProps> = ({
   setTodayApplies,
   setTotalApplies,
 }) => {
-  const [dataSource, setDataSource] = useState<ClassroomDataType[]>([])
-  const [devices, setDevices] = useState<DeviceType[]>([])
+  // const [dataSource, setDataSource] = useState<ClassroomDataType[]>([])
+
   const [modalVisible, setModalVisible] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
   const [currentRecord, setCurrentRecord] = useState<ClassroomDataType | null>(null)
@@ -101,16 +101,32 @@ const RoomTable: React.FC<RoomTableProps> = ({
   const [applyForm] = Form.useForm()
   const [currentApplyRoom, setCurrentApplyRoom] = useState<ClassroomDataType | null>(null)
   const [applications, setApplications] = useState<any[]>([])
-
+  const { data: classrooms = [], refetch: refetchClassrooms } = useLocalCache<ClassroomDataType[]>({
+    key: 'classrooms',
+    fetcher: getClassrooms,
+    staleTime: 30 * 60 * 1000 * 2 * 24,
+  })
+  const refreshData = () => {
+    refetchClassrooms()
+  }
   const filteredList = useMemo(() => {
-    return dataSource.filter(item => {
+    return classrooms.filter(item => {
       const matchSearch = item.classroom_name.includes(searchText) || item.code.includes(searchText)
       const matchType = typeFilter === undefined || item.type === typeFilter
       const matchStatus = statusFilter === undefined || item.status === statusFilter
       const matchTime = timeFilter === undefined || true
       return matchSearch && matchType && matchStatus
     })
-  }, [dataSource, searchText, typeFilter, statusFilter, timeFilter])
+  }, [classrooms, searchText, typeFilter, statusFilter, timeFilter])
+
+  const { data: devices = [], isLoading: devicesLoading } = useLocalCache<DeviceType[]>({
+    key: 'devices',
+    fetcher: async () => {
+      const { data } = await supabase.from('devices').select('id,name')
+      return data as DeviceType[]
+    },
+    staleTime: 30 * 60 * 1000 * 2 * 24,
+  })
 
   const handleApply = (record: ClassroomDataType) => {
     setCurrentApplyRoom(record)
@@ -136,23 +152,6 @@ const RoomTable: React.FC<RoomTableProps> = ({
     }
   }
 
-  const refreshData = async () => {
-    try {
-      const res = await getClassrooms()
-      setDataSource(res || [])
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  const fetchDevices = async () => {
-    try {
-      const { data } = await supabase.from('devices').select('id,name')
-      setDevices((data as DeviceType[]) || [])
-    } catch (err) {
-      console.error(err)
-    }
-  }
   const fetchApplications = async () => {
     try {
       const { data } = await supabase.from('applications').select('*')
@@ -210,22 +209,21 @@ const RoomTable: React.FC<RoomTableProps> = ({
   const isAdmin = userInfo?.role === 'admin'
   useEffect(() => {
     refreshData()
-    fetchDevices()
     fetchApplications()
   }, [])
 
   // ✅ 已修复统计逻辑
   useEffect(() => {
-    if (!dataSource.length) return
+    if (!classrooms.length) return
 
     // 总数
-    setTotalRooms(dataSource.length)
+    setTotalRooms(classrooms.length)
 
     // 可用数
-    setUsableRooms(dataSource.filter(r => r.status === 1).length)
+    setUsableRooms(classrooms.filter(r => r.status === 1).length)
 
     // 总预约次数
-    const total = dataSource.reduce((sum, r) => sum + (r.apply_count || 0), 0)
+    const total = classrooms.reduce((sum, r) => sum + (r.apply_count || 0), 0)
     setTotalApplies(total)
 
     // ✅ 今日预约（匹配你数据库格式：2026-03-27 13:08:28）
@@ -237,7 +235,7 @@ const RoomTable: React.FC<RoomTableProps> = ({
     }).length
 
     setTodayApplies(todayCount)
-  }, [dataSource, applications])
+  }, [classrooms, applications])
 
   const columns: TableColumnsType<ClassroomDataType> = [
     {

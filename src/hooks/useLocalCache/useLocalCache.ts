@@ -1,4 +1,4 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query'
+import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 import { getCache, setCache, isCacheValid } from '../../utils/cacheStorage'
 interface UseLocalCacheOptions {
   // 缓存key
@@ -20,12 +20,12 @@ interface UseLocalCacheOptions {
 export function useLocalCache<T>({
   key,
   fetcher,
-  stateTime = 1000 * 60 * 60 * 24, // 1天
+  staleTime = 1000 * 60 * 60 * 24, // 1天
   enabled = true,
   queryOptions = {},
 }) {
   // 检查本地缓存是否失效
-  const isValid = isCacheValid<T>(key, stateTime)
+  const isValid = isCacheValid<T>(key, staleTime)
   // 从缓存中读取数据，如果缓存失效则返回null
   const cacheData = isValid ? getCache<T>(key) : null
   // 使用react query 管理数据，initialData 优先使用缓存数据
@@ -39,7 +39,7 @@ export function useLocalCache<T>({
     enabled,
     initialData: cacheData ?? undefined,
     staleTime: 0,
-    gcTime: stateTime * 2,
+    gcTime: staleTime * 2,
     ...queryOptions,
   })
   return queryResult

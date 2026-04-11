@@ -1,54 +1,16 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
-
+import { memo } from 'react'
+export interface LineChartDataProps {
+  name: string
+  uv: number
+  pv: number
+  amt: number
+}
 // #region Sample data
 // 仅修改name为日期，其余数值保持不变
-const data = [
-  {
-    name: '2026-01-21', // 替换原空字符串为日期
-    uv: 400,
-    pv: 240,
-    amt: 240,
-  },
-  {
-    name: '2026-01-22', // 替换Page B为日期
-    uv: 300,
-    pv: 139,
-    amt: 220,
-  },
-  {
-    name: '2026-01-23', // 替换Page C为日期
-    uv: 200,
-    pv: 560,
-    amt: 220,
-  },
-  {
-    name: '2026-01-24', // 替换Page D为日期
-    uv: 270,
-    pv: 398,
-    amt: 200,
-  },
-  {
-    name: '2026-01-25', // 替换Page E为日期
-    uv: 189,
-    pv: 480,
-    amt: 211,
-  },
-  {
-    name: '2026-01-26', // 替换Page F为日期
-    uv: 239,
-    pv: 380,
-    amt: 250,
-  },
-  {
-    name: '2026-01-27', // 替换Page G为日期
-    uv: 340,
-    pv: 430,
-    amt: 210,
-  },
-]
 
 // #endregion
-const SynchronizedAreaChart = () => {
+const SynchronizedAreaChart = memo(({ data }: { data: LineChartDataProps[] }) => {
   return (
     <div
       style={{
@@ -101,6 +63,5 @@ const SynchronizedAreaChart = () => {
       </AreaChart>
     </div>
   )
-}
-
+})
 export default SynchronizedAreaChart

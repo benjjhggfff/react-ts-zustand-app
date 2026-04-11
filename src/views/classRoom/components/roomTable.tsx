@@ -19,7 +19,7 @@ import {
 import type { TableColumnsType } from 'antd'
 import { supabase } from '../../../service/supabase'
 import { useSelector } from 'react-redux'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo } from 'react'
 import {
   getClassrooms,
   addClassroom,
@@ -237,106 +237,114 @@ const RoomTable: React.FC<RoomTableProps> = ({
     setTodayApplies(todayCount)
   }, [classrooms, applications])
 
-  const columns: TableColumnsType<ClassroomDataType> = [
-    {
-      title: '教室名称',
-      key: 'classroom_name',
-      render: (_, record) => (
-        <Space direction="vertical" size={2}>
-          <span>{record.classroom_name}</span>
-          <span style={{ color: '#999', fontSize: 12 }}>{record.code}</span>
-        </Space>
-      ),
-    },
-    { title: '位置', dataIndex: 'location' },
-    {
-      title: '类型',
-      dataIndex: 'type',
-      render: type => {
-        const map: Record<number, string> = {
-          1: '普通教室',
-          2: '实训车间',
-          3: '实验室',
-          4: '机房',
-          5: '艺术教室',
-          6: '会议室',
-        }
-        return <Badge status="processing" text={map[type] || '未知'} />
+  const columns = useMemo<TableColumnsType<ClassroomDataType>>(
+    () => [
+      {
+        title: '教室名称',
+        key: 'classroom_name',
+        render: (_, record) => (
+          <Space direction="vertical" size={2}>
+            <span>{record.classroom_name}</span>
+            <span style={{ color: '#999', fontSize: 12 }}>{record.code}</span>
+          </Space>
+        ),
       },
-    },
-    { title: '容量', render: (_, r) => `${r.capacity}人` },
-    {
-      title: '核心设备',
-      render: (_, record) => {
-        const list = record.classroom_devices || []
-        const names = list.map(i => i.devices?.name).filter(Boolean)
-        return names.join('、') || '无设备'
+      { title: '位置', dataIndex: 'location' },
+      {
+        title: '类型',
+        dataIndex: 'type',
+        render: type => {
+          const map: Record<number, string> = {
+            1: '普通教室',
+            2: '实训车间',
+            3: '实验室',
+            4: '机房',
+            5: '艺术教室',
+            6: '会议室',
+          }
+          return <Badge status="processing" text={map[type] || '未知'} />
+        },
       },
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      render: s => (
-        <Badge status={s === 1 ? 'success' : 'error'} text={s === 1 ? '可用' : '不可用'} />
-      ),
-    },
-    {
-      title: '预约次数',
-      render: (_, record) => <span>{record.apply_count} 次</span>,
-    },
-    {
-      title: '操作',
-      render: (_, record) => (
-        <Space size="small">
-          {isAdmin && <a onClick={() => handleEdit(record)}>编辑</a>}
+      { title: '容量', render: (_, r) => `${r.capacity}人` },
+      {
+        title: '核心设备',
+        render: (_, record) => {
+          const list = record.classroom_devices || []
+          const names = list.map(i => i.devices?.name).filter(Boolean)
+          return names.join('、') || '无设备'
+        },
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        render: s => (
+          <Badge status={s === 1 ? 'success' : 'error'} text={s === 1 ? '可用' : '不可用'} />
+        ),
+      },
+      {
+        title: '预约次数',
+        render: (_, record) => <span>{record.apply_count} 次</span>,
+      },
+      {
+        title: '操作',
+        render: (_, record) => (
+          <Space size="small">
+            {isAdmin && <a onClick={() => handleEdit(record)}>编辑</a>}
 
-          <a onClick={() => handleApply(record)}>预约</a>
-          {isAdmin && (
-            <a style={{ color: '#f5222d' }} onClick={() => handleDelete(record.id as number)}>
-              删除
-            </a>
-          )}
-        </Space>
-      ),
-    },
-  ]
+            <a onClick={() => handleApply(record)}>预约</a>
+            {isAdmin && (
+              <a style={{ color: '#f5222d' }} onClick={() => handleDelete(record.id as number)}>
+                删除
+              </a>
+            )}
+          </Space>
+        ),
+      },
+    ],
+    [handleEdit, handleDelete, handleApply, isAdmin]
+  )
 
-  const expandedRowRender = (record: ClassroomDataType) => (
-    <Row gutter={24} style={{ margin: '16px 0' }}>
-      <Col span={8}>
-        <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>基础信息</h4>
-        <Descriptions column={1} bordered size="small">
-          <Descriptions.Item label="教室编号">{record.code}</Descriptions.Item>
-          <Descriptions.Item label="管理部门">{record.management_dept}</Descriptions.Item>
-          <Descriptions.Item label="位置">{record.location}</Descriptions.Item>
-          <Descriptions.Item label="描述">{record.description || '无'}</Descriptions.Item>
-        </Descriptions>
-      </Col>
-      <Col span={8}>
-        <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>设备状态</h4>
-        <Descriptions column={1} bordered size="small">
-          <Descriptions.Item label="空调">
-            {record.air_conditioner ? '开启' : '关闭'}
-          </Descriptions.Item>
-          <Descriptions.Item label="投影仪">{record.projector ? '开启' : '关闭'}</Descriptions.Item>
-          <Descriptions.Item label="麦克风">
-            {record.microphone ? '开启' : '关闭'}
-          </Descriptions.Item>
-          <Descriptions.Item label="灯光">{record.light ? '开启' : '关闭'}</Descriptions.Item>
-        </Descriptions>
-      </Col>
-      <Col span={8}>
-        <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>空间信息</h4>
-        <Descriptions column={1} bordered size="small">
-          <Descriptions.Item label="最大容量">{record.max_capacity}</Descriptions.Item>
-          <Descriptions.Item label="标准容量">
-            {record.standard_capacity || '未设置'}
-          </Descriptions.Item>
-          <Descriptions.Item label="面积">{record.area || '未记录'}</Descriptions.Item>
-          <Descriptions.Item label="本周使用时长">{record.weekly_usage} 小时</Descriptions.Item>
-        </Descriptions>
-      </Col>
-    </Row>
+  const expandedRowRender = useMemo(
+    () => (record: ClassroomDataType) => (
+      <Row gutter={24} style={{ margin: '16px 0' }}>
+        <Col span={8}>
+          <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>基础信息</h4>
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item label="教室编号">{record.code}</Descriptions.Item>
+            <Descriptions.Item label="管理部门">{record.management_dept}</Descriptions.Item>
+            <Descriptions.Item label="位置">{record.location}</Descriptions.Item>
+            <Descriptions.Item label="描述">{record.description || '无'}</Descriptions.Item>
+          </Descriptions>
+        </Col>
+        <Col span={8}>
+          <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>设备状态</h4>
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item label="空调">
+              {record.air_conditioner ? '开启' : '关闭'}
+            </Descriptions.Item>
+            <Descriptions.Item label="投影仪">
+              {record.projector ? '开启' : '关闭'}
+            </Descriptions.Item>
+            <Descriptions.Item label="麦克风">
+              {record.microphone ? '开启' : '关闭'}
+            </Descriptions.Item>
+            <Descriptions.Item label="灯光">{record.light ? '开启' : '关闭'}</Descriptions.Item>
+          </Descriptions>
+        </Col>
+        <Col span={8}>
+          <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>空间信息</h4>
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item label="最大容量">{record.max_capacity}</Descriptions.Item>
+            <Descriptions.Item label="标准容量">
+              {record.standard_capacity || '未设置'}
+            </Descriptions.Item>
+            <Descriptions.Item label="面积">{record.area || '未记录'}</Descriptions.Item>
+            <Descriptions.Item label="本周使用时长">{record.weekly_usage} 小时</Descriptions.Item>
+          </Descriptions>
+        </Col>
+      </Row>
+    ),
+    []
   )
 
   return (
@@ -462,4 +470,4 @@ const RoomTable: React.FC<RoomTableProps> = ({
   )
 }
 
-export default RoomTable
+export default memo(RoomTable)

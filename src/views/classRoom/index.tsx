@@ -1,14 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import NumberCard from '../../components/numberCard'
 import { Row, Col, Card } from 'antd'
 import LineChart from './components/lineChart'
-import RadarChart from './components/radarChart'
+import RadarChart, { type RadarChartProps } from './components/radarChart'
 import BarChart from './components/barChart'
 import SearchInput from '../../components/searchInput'
 import SelectInput from '../../components/selectInput'
 import RoomTable from './components/roomTable'
 import styles from './classRoom.module.scss'
 // 引入本地缓存
+// #region Sample data
 
 const ClassRoom: React.FC = () => {
   // 筛选状态
@@ -16,12 +17,127 @@ const ClassRoom: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<number | undefined>(undefined)
   const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined)
   const [timeFilter, setTimeFilter] = useState<string | undefined>(undefined)
+  // const [RadarChartData, setDataRadarChartData] = useState<RadarChartProps[]>([])
 
   // 👇👇👇 卡片真实数据状态（关键）
   const [totalRooms, setTotalRooms] = useState(0)
   const [usableRooms, setUsableRooms] = useState(0)
   const [todayApplies, setTodayApplies] = useState(0)
   const [totalApplies, setTotalApplies] = useState(0)
+
+  const [RadarChartData, setDataRadarChartData] = useState<RadarChartProps[]>([])
+  const dataRadarChart = useMemo(
+    () => [
+      { subject: 'Math', A: 120, B: 110, fullMark: 150 },
+      { subject: 'Chinese', A: 98, B: 130, fullMark: 150 },
+      { subject: 'English', A: 86, B: 130, fullMark: 150 },
+      { subject: 'Geography', A: 99, B: 100, fullMark: 150 },
+      { subject: 'Physics', A: 85, B: 90, fullMark: 150 },
+      { subject: 'History', A: 65, B: 85, fullMark: 150 },
+    ],
+    []
+  )
+  const barChartData = useMemo(
+    () => [
+      {
+        name: '2026-01-21',
+        uv: 4000,
+        利用率: 2400,
+        amt: 2400,
+      },
+      {
+        name: '2026-01-22',
+        uv: 3000,
+        利用率: 1398,
+        amt: 2210,
+      },
+      {
+        name: '2026-01-23',
+        uv: 2000,
+        利用率: 9800,
+        amt: 2290,
+      },
+      {
+        name: '2026-01-24',
+        uv: 2780,
+        利用率: 3908,
+        amt: 2000,
+      },
+      {
+        name: '2026-01-25',
+        uv: 1890,
+        利用率: 4800,
+        amt: 2181,
+      },
+      {
+        name: '2026-01-26',
+        uv: 2390,
+        利用率: 3800,
+        amt: 2500,
+      },
+      {
+        name: '2026-01-27',
+        uv: 3490,
+        利用率: 4300,
+        amt: 2100,
+      },
+    ],
+    []
+  )
+  const dataLineChart = useMemo(
+    () => [
+      {
+        name: '2026-01-21', // 替换原空字符串为日期
+        uv: 400,
+        pv: 240,
+        amt: 240,
+      },
+      {
+        name: '2026-01-22', // 替换Page B为日期
+        uv: 300,
+        pv: 139,
+        amt: 220,
+      },
+      {
+        name: '2026-01-23', // 替换Page C为日期
+        uv: 200,
+        pv: 560,
+        amt: 220,
+      },
+      {
+        name: '2026-01-24', // 替换Page D为日期
+        uv: 270,
+        pv: 398,
+        amt: 200,
+      },
+      {
+        name: '2026-01-25', // 替换Page E为日期
+        uv: 189,
+        pv: 480,
+        amt: 211,
+      },
+      {
+        name: '2026-01-26', // 替换Page F为日期
+        uv: 239,
+        pv: 380,
+        amt: 250,
+      },
+      {
+        name: '2026-01-27', // 替换Page G为日期
+        uv: 340,
+        pv: 430,
+        amt: 210,
+      },
+    ],
+    []
+  )
+
+  useEffect(() => {
+    // 模拟接口请求
+    setTimeout(() => {
+      setDataRadarChartData(dataRadarChart)
+    }, 500)
+  }, [])
 
   // 下拉选项
   const typeOptions = [
@@ -126,17 +242,17 @@ const ClassRoom: React.FC = () => {
         <Row gutter={10} style={{ marginTop: '20px', height: '300px' }}>
           <Col span={6}>
             <Card>
-              <RadarChart />
+              <RadarChart data={RadarChartData} />
             </Card>
           </Col>
           <Col span={12}>
             <Card>
-              <LineChart />
+              <LineChart data={dataLineChart} />
             </Card>
           </Col>
           <Col span={6}>
             <Card style={{ height: '90%' }}>
-              <BarChart />
+              <BarChart data={barChartData} />
             </Card>
           </Col>
         </Row>
